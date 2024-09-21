@@ -33,7 +33,6 @@ class DocManager:
 
         for file in files_to_parse:
             self._handle_file(file)
-            break
 
     def _walk(self):
 
@@ -128,5 +127,5 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    manager = DocManager(".", only_new=False)
+    manager = DocManager(".", only_new=True)
     manager.make_docstrings()

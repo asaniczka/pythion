@@ -165,13 +165,11 @@ class NodeIndexer:
 
         return list(arg_types)
 
-    def get_dependencies(self, func_name: str):
+    def get_dependencies(self, func_name: str) -> list[str] | None:
 
         func = self.index.get(func_name)
         if not func:
-            raise ModuleNotFoundError(
-                f"Unable to locate {func_name} in the index namespace"
-            )
+            return None
 
         node = ast.parse(list(func)[0])
         if isinstance(node, ast.Module):
