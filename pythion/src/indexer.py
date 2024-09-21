@@ -3,12 +3,13 @@ Main indexer of pythion
 """
 
 import ast
+import os
 from collections import defaultdict
 from copy import deepcopy
-import os
-from pathlib import Path
-from rich import print
 from itertools import chain
+from pathlib import Path
+
+from rich import print
 
 
 class CallFinder(ast.NodeVisitor):
@@ -20,12 +21,10 @@ class CallFinder(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         "visit_FunctionDef doc"
-        print("Visited", node.name)
         self.generic_visit(node)
 
     def visit_ClassDef(self, node: ast.ClassDef):
         "visit_Call doc"
-        print("Visited", node.name)
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call):
@@ -34,7 +33,6 @@ class CallFinder(ast.NodeVisitor):
 
 
 class NodeTransformer(ast.NodeTransformer):
-
     def __init__(self, index: dict[str, set[str]]) -> None:
         self.index: dict[str, set[str]] = index
 
@@ -98,7 +96,6 @@ class NodeTransformer(ast.NodeTransformer):
 
 
 class NodeIndexer:
-
     def __init__(
         self, root_dir: str, folders_to_ignore: list[str] | None = None
     ) -> None:
@@ -113,9 +110,7 @@ class NodeIndexer:
         self.warn()
 
     def build_index(self):
-        """
-        Modify the functions in a given Python file to include docstrings.
-        """
+        """"""
         transformer = NodeTransformer(self.index)
         for root, _, files in os.walk(self.root_dir):
             for file in files:
@@ -127,7 +122,6 @@ class NodeIndexer:
                         continue
 
                     file_path = Path(root, file)
-                    print(file_path)
                     tree = ast.parse(file_path.read_text(encoding="utf-8"))
 
                     for node in ast.walk(tree):
@@ -175,7 +169,10 @@ class NodeIndexer:
 
         func = self.index.get(func_name)
         if not func:
-            raise ModuleNotFoundError()
+            raise ModuleNotFoundError(
+                f"Unable to locate {func_name} in the index namespace"
+            )
+
         node = ast.parse(list(func)[0])
         if isinstance(node, ast.Module):
             node = node.body[0]
@@ -185,7 +182,7 @@ class NodeIndexer:
 
         dependencies = []
 
-        for dep in chain(call_names, arg_types):
+        for dep in chain(call_names, arg_types or []):
             if dep in self.index:
                 dependencies.extend(list(self.index[dep]))
 
