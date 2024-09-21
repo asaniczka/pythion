@@ -73,8 +73,7 @@ class DocManager:
             if isinstance(node.body[0], ast.Expr) and isinstance(
                 node.body[0].value, ast.Constant
             ):
-                popped = node.body.pop(0)
-                print([popped])
+                _ = node.body.pop(0)
 
             func_code = ast.unparse(node)
             func_name = node.name
@@ -84,7 +83,7 @@ class DocManager:
             doc_string = doc_string.strip().strip('"""').strip("'''")
             if not doc_string:
                 continue
-            node.body[0] = ast.Expr(ast.Constant(doc_string.strip()))
+            node.body.insert(0, ast.Expr(ast.Constant(doc_string.strip())))
         file_path.write_text(ast.unparse(tree), encoding="utf-8")
 
     def _generate_doc(self, func_name: str, func_code: str, dependencies: list[str]):
