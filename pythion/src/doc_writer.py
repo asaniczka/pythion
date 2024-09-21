@@ -73,7 +73,8 @@ class DocManager:
             if isinstance(node.body[0], ast.Expr) and isinstance(
                 node.body[0].value, ast.Constant
             ):
-                node.body.pop(0)
+                popped = node.body.pop(0)
+                print([popped])
 
             func_code = ast.unparse(node)
             func_name = node.name
@@ -90,6 +91,9 @@ class DocManager:
 
         print(f"Generating docstrings for '{func_name}'")
         client = OpenAI()
+
+        if not dependencies:
+            dependencies = []
 
         class Step(BaseModel):
             explanation: str
