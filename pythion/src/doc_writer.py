@@ -4,8 +4,8 @@ from pathlib import Path
 
 from openai import OpenAI
 from pydantic import BaseModel
-from wrapworks import cwdtoenv
 from rich import print
+from wrapworks import cwdtoenv
 
 cwdtoenv()
 
@@ -71,14 +71,21 @@ class DocManager:
             if self.only_new and have_doc:
                 continue
 
+            if isinstance(node.body[0], ast.Expr) and isinstance(
+                node.body[0].value, ast.Constant
+            ):
+                node.body.pop(0)
+
             func_code = ast.unparse(node)
             func_name = node.name
             dependencies = self.indexer.get_dependencies(func_name)
 
             doc_string = self._generate_doc(func_name, func_code, dependencies)
-            print(doc_string)
+            doc_string = doc_string.strip().strip('"""').strip("'''")
+            if not doc_string:
+                continue
             node.body[0] = ast.Expr(ast.Constant(doc_string.strip()))
-            # print(ast.unparse(node))
+        file_path.write_text(ast.unparse(tree), encoding="utf-8")
 
     def _generate_doc(self, func_name: str, func_code: str, dependencies: list[str]):
 
@@ -99,7 +106,7 @@ class DocManager:
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a Python docstring writer. Your task is to look at the main function and it's arguments, dependencies and write a docstring for the main function. Only share the the docstring for the main function.\n\nThe format I want is Google Style. Please mention Args, Returns, Raises, Asserts, and Notes wherever necessary. You can use markdown `` for highlighting important keywords. A row must not contain more than 79 characters. In the raises section, only mention errors that are explicitly raises. If no errors are raised, skip raises section.",
+                    "content": "You are a Python docstring writer. Your task is to look at the main function, it's arguments, dependencies and write a docstring for the main function. Only share the the docstring for the main function.\n\nThe format I want is Google Style.",
                 },
                 {"role": "user", "content": "Main Function Name: " + func_name},
                 {"role": "user", "content": "Main function source code: " + func_code},
@@ -121,5 +128,5 @@ if __name__ == "__main__":
 
     load_dotenv()
 
-    manager = DocManager(".")
+    manager = DocManager(".", only_new=False)
     manager.make_docstrings()
