@@ -7,7 +7,7 @@ from pythion.src.models.location_models import ObjectLocation
 
 def find_object_location(
     file_path: str, obj_name: str, obj_type: Literal["function", "class"]
-) -> ObjectLocation:
+) -> ObjectLocation | None:
     """
     Finds the location of a specified function or class in a given file.
 

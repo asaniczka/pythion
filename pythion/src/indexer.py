@@ -43,28 +43,39 @@ class CallFinder(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """
-        Visits a function definition node in the AST.
+        Visits a class definition node in an Abstract Syntax Tree (AST).
 
-        This method processes the 'FunctionDef' node by calling the generic visit method, allowing for any custom behavior to be defined in subclasses. It serves as the entry point for handling function definitions during the tree traversal.
+        This method is part of a visitor pattern for traversing AST nodes. It calls the
+        `generic_visit` method to handle the visit according to the AST structure.
 
         Args:
-            node (ast.FunctionDef): The function definition node to be visited.
+            node (ast.ClassDef): The class definition node to be visited.
+
+        Returns:
+            None: This method does not return a value but may modify the state of the
+        dynamic visitor depending on its implementation.
         """
         self.generic_visit(node)
 
     def visit_ClassDef(self, node: ast.ClassDef):
         """
-        Processes and cleans a class definition node in an Abstract Syntax Tree (AST).
+        Visits a FunctionDef node in an Abstract Syntax Tree (AST).
+
+        This method is part of an AST visitor pattern, processing a node
+        representing a function definition. It calls the generic_visit
+        method to handle visits to child nodes if necessary.
 
         Args:
-            node (ast.ClassDef): The class definition node to be processed.
+            node (ast.FunctionDef): The AST node representing a function
+            definition to be visited.
 
         Returns:
-            ast.ClassDef: The cleaned and possibly modified class definition node.
+            None: This method does not return a value.
 
-        This function also checks for the presence of a docstring in the class,
-        performs a generic visit to handle child nodes, and indexes the class
-        information into the current path for further analysis.
+        Note:
+            This function is typically called as part of an AST traversal,
+            where function definitions are processed according to specific
+            visitor logic.
         """
         self.generic_visit(node)
 
