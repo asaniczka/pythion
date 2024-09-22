@@ -1,12 +1,10 @@
 """"""
 
-import os
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
 from pythion.src.file_handler import find_object_location
-from pythion.src.models.location_models import ObjectLocation
 
 
 class SourceCode(BaseModel):

@@ -1,6 +1,6 @@
 import os
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class ObjectLocation(BaseModel):

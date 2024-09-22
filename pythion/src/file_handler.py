@@ -2,8 +2,6 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
-
 from pythion.src.models.location_models import ObjectLocation
 
 
