@@ -89,7 +89,7 @@ class SourceCode(BaseModel):
         Returns:
             str: A formatted string in the form 'file_path:object_name:source_code'.
         """
-        return f"{self.file_path}:{self.object_name}:{self.source_code[:15]}"
+        return f"{self.file_path}:{self.object_name}:{self.source_code[15:]}"
 
 
 class SourceDoc(BaseModel):
