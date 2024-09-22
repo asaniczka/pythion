@@ -3,11 +3,11 @@ import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-import pyperclip # type: ignore
+import pyperclip  # type: ignore
 from openai import OpenAI
 from pydantic import BaseModel
 from rich import print
-from tqdm import tqdm # type: ignore
+from tqdm import tqdm  # type: ignore
 from wrapworks import cwdtoenv  # type: ignore
 
 cwdtoenv()
@@ -30,6 +30,7 @@ class DocManager:
         self,
         root_dir: str,
         folders_to_ignore: list[str] | None = None,
+        indexer: NodeIndexer | None = None,
     ) -> None:
 
         self.root_dir: str = root_dir
@@ -37,7 +38,9 @@ class DocManager:
         self.doc_cache_file_name: str = "doc_cache.json"
 
         self.folders_to_ignore = [".venv", ".mypy_cache"]
-        self.indexer = NodeIndexer(root_dir, folders_to_ignore=folders_to_ignore)
+        self.indexer = indexer or NodeIndexer(
+            root_dir, folders_to_ignore=folders_to_ignore
+        )
         if folders_to_ignore:
             self.folders_to_ignore += folders_to_ignore
 
@@ -147,7 +150,7 @@ class DocManager:
         for idx, result in enumerate(results):
             pyperclip.copy(result.doc_string)
             print(
-                f"Copied to clipboard. Manually paste docstring: {result.source.location}"
+                f"Copied to clipboard. Manually paste docstring @ {result.source.location}"
             )
             do_pop = input("Pop docstring from cache? [Y/N/EXIT]")
 
@@ -194,7 +197,7 @@ class DocManager:
                 continue
             pyperclip.copy(res.doc_string)
             print(
-                f"Copied to clipboard. Manually paste docstring: {res.source.location}"
+                f"Copied to clipboard. Manually paste docstring @ {res.source.location}"
             )
 
     def _handle_doc_generation(
@@ -227,7 +230,9 @@ class DocManager:
 
         source_code = object_def or self._get_source_code_from_name(function_name)
         if not source_code:
-            print("No source code given!")
+            print(
+                "ERROR: Unable to locate object in the index. Double check the name you entered."
+            )
             return None
 
         obj_name = source_code.object_name
@@ -265,7 +270,6 @@ class DocManager:
 
         func = list(self.indexer.index[obj_name])
         if not func:
-            print("ERROR: No object found!")
             return None
 
         if len(func) > 1:

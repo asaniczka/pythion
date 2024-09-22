@@ -245,7 +245,6 @@ class NodeIndexer:
         if folders_to_ignore:
             self.folders_to_ignore.extend(folders_to_ignore)
         self.build_index()
-        self.warn()
 
     def build_index(self):
         """
@@ -294,11 +293,17 @@ class NodeIndexer:
             "__init__",
             "__enter__",
             "__exit__",
+            "__eq__",
+            "__hash__",
             "str",
             "dict",
             "list",
             "int",
             "float",
+            "setUp",
+            "tearDown",
+            "setUpClass",
+            "tearDownClass",
         ]
         for syntax in common_syntax:
             self.index.pop(syntax, None)

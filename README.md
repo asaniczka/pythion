@@ -13,8 +13,6 @@ Pythion is a command-line interface (CLI) tool designed to assist Python develop
 - [Installation](#installation)
 - [Usage](#usage)
 - [Commands](#commands)
-- [License](#license)
-
 ## Installation
 
 You can install Pythion via pip. Open your terminal and enter:
@@ -90,8 +88,4 @@ pythion iter-docs /path/to/dir
 
 # NOTES
 
-- You must have an OpenAI API key saves on your environment for the key `OPENAI_API_KEY`
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+- You must have an OpenAI API key saved on your environment for the key `OPENAI_API_KEY`
