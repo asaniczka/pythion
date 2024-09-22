@@ -84,7 +84,7 @@ class DocManager:
                 if not use_all and v.has_docstring:
                     continue
                 for cmd in ignore_commands:
-                    if cmd in v.source_code[:30]:
+                    if cmd in v.source_code[:150]:
                         break
                 else:
                     source_codes_to_queue.append(v)
