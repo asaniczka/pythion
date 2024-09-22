@@ -11,7 +11,7 @@ from tqdm import tqdm  # type: ignore
 from wrapworks import cwdtoenv  # type: ignore
 
 cwdtoenv()
-from pythion import NodeIndexer
+from pythion.src.indexer import NodeIndexer
 from pythion.src.models.core_models import SourceCode, SourceDoc
 
 
