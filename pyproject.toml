@@ -45,3 +45,7 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/asaniczka/pythion"
+
+
+[project.scripts]
+pythion = "pythion.__init__:pythion"

@@ -33,9 +33,28 @@ pythion [OPTIONS] COMMAND [ARGS]...
 
 ## Commands
 
-### 1. `build-doc-cache`
+### 1. `make_docstr`
 
-Builds a documentation cache for functions and methods in a specified directory.
+Generates documentation for any given function or class name.
+
+```bash
+pythion make-docstr <root_dir>
+```
+
+- **Arguments:**
+  - `root_dir`: The path to the root directory containing the Python files to analyze.
+
+**Example:**
+
+```bash
+pythion make-docstr /path/to/dir
+```
+
+### 2. `build-doc-cache`
+
+Bulk builds a documentation cache for functions and methods in a specified directory.
+
+This cache then can later be used via `iter-docs`
 
 ```bash
 pythion build-doc-cache <root_dir> [--use_all]
@@ -52,9 +71,9 @@ pythion build-doc-cache <root_dir> [--use_all]
 pythion build-doc-cache /path/to/dir --use_all
 ```
 
-### 2. `iter-docs`
+### 3. `iter-docs`
 
-Iterates through documents in the specified directory.
+Iterates through the documentation cache.
 
 ```bash
 pythion iter-docs <root_dir>
@@ -69,22 +88,9 @@ pythion iter-docs <root_dir>
 pythion iter-docs /path/to/dir
 ```
 
-### 3. `make_docstr`
+# NOTES
 
-Generates documentation strings for Python files in the specified root directory.
-
-```bash
-pythion make-docstr <root_dir>
-```
-
-- **Arguments:**
-  - `root_dir`: The path to the root directory containing the Python files to analyze.
-
-**Example:**
-
-```bash
-pythion make-docstr /path/to/dir
-```
+- You must have an OpenAI API key saves on your environment for the key `OPENAI_API_KEY`
 
 ## License
 
