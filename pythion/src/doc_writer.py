@@ -3,12 +3,12 @@ import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-import pyperclip
+import pyperclip # type: ignore
 from openai import OpenAI
 from pydantic import BaseModel
 from rich import print
-from tqdm import tqdm
-from wrapworks import cwdtoenv
+from tqdm import tqdm # type: ignore
+from wrapworks import cwdtoenv  # type: ignore
 
 cwdtoenv()
 from pythion import NodeIndexer
@@ -83,7 +83,7 @@ class DocManager:
                 if not use_all and v.has_docstring:
                     continue
                 for cmd in ignore_commands:
-                    if cmd in v.source_code:
+                    if cmd in v.source_code[:30]:
                         break
                 else:
                     source_codes_to_queue.append(v)
@@ -93,9 +93,10 @@ class DocManager:
                 "Couldn't find any objects that require docstring. Use `use_all` to generate docstrings for all objects"
             )
         results: list[SourceDoc] = []
-        with ThreadPoolExecutor(max_workers=50) as tpe, tqdm(
-            total=len(source_codes_to_queue)
-        ) as pbar:
+        with (
+            ThreadPoolExecutor(max_workers=50) as tpe,
+            tqdm(total=len(source_codes_to_queue)) as pbar,
+        ):
 
             futures = [
                 tpe.submit(self._handle_doc_generation, object_def=source, pbar=pbar)
@@ -145,7 +146,9 @@ class DocManager:
         save_results: list[SourceDoc] = []
         for idx, result in enumerate(results):
             pyperclip.copy(result.doc_string)
-            print(f"Manually paste docstring for {result.source.location}")
+            print(
+                f"Copied to clipboard. Manually paste docstring: {result.source.location}"
+            )
             do_pop = input("Pop docstring from cache? [Y/N/EXIT]")
 
             if "exit" in do_pop.lower():
@@ -161,6 +164,18 @@ class DocManager:
         self._save_doc_cache(save_results)
 
     def _save_doc_cache(self, save_results: list[SourceDoc]):
+        """
+        Saves a list of SourceDoc instances to a JSON file in the specified cache directory.
+
+            Args:
+                save_results (list[SourceDoc]): A list of SourceDoc instances to be saved.
+
+            Raises:
+                Exception: Raises an exception if writing to the file fails.
+
+            This method constructs the full path to the cache file, opens it in write mode, and serializes the provided SourceDoc instances using their model_dump() method.
+            The data is stored in a JSON format for later retrieval.
+        """
         path = Path(self.cache_dir, self.doc_cache_file_name)
         with open(path, "w", encoding="utf-8") as wf:
             json.dump([x.model_dump() for x in save_results], wf)
@@ -178,7 +193,9 @@ class DocManager:
             if not res:
                 continue
             pyperclip.copy(res.doc_string)
-            print(f"Docstring generated for {res.source.location}")
+            print(
+                f"Copied to clipboard. Manually paste docstring: {res.source.location}"
+            )
 
     def _handle_doc_generation(
         self,
@@ -205,10 +222,13 @@ class DocManager:
         if pbar:
             pbar.update(1)
 
+        if not function_name or object_def:
+            raise ValueError("Please provide a function name or an object_def")
+
         source_code = object_def or self._get_source_code_from_name(function_name)
         if not source_code:
             print("No source code given!")
-            return
+            return None
 
         obj_name = source_code.object_name
         dependencies = self.indexer.get_dependencies(obj_name)
@@ -220,7 +240,7 @@ class DocManager:
         except Exception as e:
             print(e)
             print("Unable to generate doc string")
-            return
+            return None
 
         if not doc_string:
             print("Unable to generate doc string")
@@ -264,17 +284,17 @@ class DocManager:
         self,
         func_name: str,
         func_code: str,
-        dependencies: list[str],
+        dependencies: list[str] | None,
         silence: bool = False,
     ):
         """
-        Generates a structured docstring for a specified Python function.
+        Generates docstrings for Python functions using the OpenAI model.
 
         Args:
-            func_name (str): The name of the function to document.
-            func_code (str): The source code of the function.
-            dependencies (list[str]): A list of dependencies required by the function.
-            silence (bool, optional): If True, suppresses output during processing. Defaults to False.
+            func_name (str): The name of the function for which to generate the docstring.
+            func_code (str): The source code of the function as a string.
+            dependencies (list[str]): A list of dependencies required for the function.
+            silence (bool, optional): If True, suppresses the output. Defaults to False.
 
         Returns:
             str: The generated docstring for the specified function.
@@ -288,24 +308,25 @@ class DocManager:
         class Step(BaseModel):
             """#pythion:ignore"""
 
-            explanation: str
+            why_does_this_object_exist: str | None = None
+            what_purpose_does_it_serve: str | None = None
 
         class DocString(BaseModel):
             """#pythion:ignore"""
 
             steps: list[Step]
-            main_func_name: str
-            main_func_docstring: str
+            main_object_name: str
+            main_object_docstring: str
 
         completion = client.beta.chat.completions.parse(
             model="gpt-4o-mini",
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a Python docstring writer. Your task is to look at the main function, it's arguments, dependencies and write a docstring for the main function. Only share the the docstring for the main function.\n\nThe format I want is Google Style. Try to keep the length to less than 150 words. Format neatly",
+                    "content": "You are a Python docstring writer. Your task is to look at the main object, it's arguments, dependencies and write a docstring for the main object. Only share the the docstring for the main object.\n\nThe format I want is Google Style. Try to keep the length to less than 150 words. Format neatly",
                 },
-                {"role": "user", "content": "Main Function Name: " + func_name},
-                {"role": "user", "content": "Main function source code: " + func_code},
+                {"role": "user", "content": "Main Object Name: " + func_name},
+                {"role": "user", "content": "Main Object source code: " + func_code},
                 {
                     "role": "user",
                     "content": "Dependency Source code: " + "\n\n".join(dependencies),
@@ -314,7 +335,9 @@ class DocManager:
             response_format=DocString,
         )
         ai_repsonse = completion.choices[0].message
-        return ai_repsonse.parsed.main_func_docstring
+        if not ai_repsonse.parsed:
+            return None
+        return ai_repsonse.parsed.main_object_docstring
 
 
 if __name__ == "__main__":

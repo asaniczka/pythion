@@ -12,7 +12,7 @@ from itertools import chain
 from pathlib import Path
 
 from rich import print
-from wrapworks import cwdtoenv
+from wrapworks import cwdtoenv  # type: ignore
 
 cwdtoenv()
 
@@ -38,8 +38,7 @@ class CallFinder(ast.NodeVisitor):
 
     def __init__(self, call_names: set[str]) -> None:
         """"""
-        self.calls = set()
-        self.call_names = call_names
+        self.call_names: set[str] = call_names
 
     def visit_FunctionDef(self, node: ast.FunctionDef):
         """
@@ -165,9 +164,9 @@ class NodeTransformer(ast.NodeTransformer):
 
         for stmt in node.body:
             if isinstance(stmt, ast.FunctionDef):
-                stmt = self.clean_function(stmt)
+                stmt = self.clean_function(stmt)  # type: ignore
             if isinstance(stmt, ast.ClassDef):
-                stmt = self.clean_class(stmt)
+                stmt = self.clean_class(stmt)  # type: ignore
 
         return node, has_docstring
 
@@ -314,7 +313,7 @@ class NodeIndexer:
         Returns:
             list[str]: A list of names of function calls found within the specified AST node.
         """
-        call_names = set()
+        call_names: set[str] = set()
         call_finder = CallFinder(call_names)
         call_finder.visit(node)
         return list(call_names)
@@ -354,17 +353,20 @@ class NodeIndexer:
         func = self.index.get(func_name)
         if not func:
             return None
+
         node = ast.parse(list(func)[0].source_code)
         if isinstance(node, ast.Module):
-            node = node.body[0]
-        call_names = self._get_call_tree(node)
-        arg_types = self._get_args(node)
+            node = node.body[0]  # type: ignore
+
+        call_names = self._get_call_tree(node)  # type: ignore
+        arg_types = self._get_args(node)  # type: ignore
+
         dependencies: list[SourceCode] = []
         for dep in chain(call_names, arg_types or []):
             if dep in self.index:
                 dependencies.extend(list(self.index[dep]))
-        dependencies = [x.source_code[:3000] for x in dependencies]
-        return dependencies
+        dependencies_src: list[str] = [x.source_code[:3000] for x in dependencies]
+        return dependencies_src
 
     def warn(self):
         """
