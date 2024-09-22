@@ -237,7 +237,7 @@ class DocManager:
         if pbar:
             pbar.update(1)
 
-        if not function_name or object_def:
+        if not function_name or not object_def:
             raise ValueError("Please provide a function name or an object_def")
 
         source_code = object_def or self._get_source_code_from_name(function_name)
