@@ -4,7 +4,6 @@ from wrapworks import cwdtoenv  # type: ignore
 cwdtoenv()
 
 from pythion.src.doc_writer import DocManager
-from pythion.src.indexer import NodeIndexer
 
 
 @click.group()
