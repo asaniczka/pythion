@@ -49,14 +49,14 @@ pythion make-docs <root_dir>
 pythion make-docs /path/to/dir
 ```
 
-### 2. `build-doc-cache`
+### 2. `build-cache`
 
 Bulk builds a documentation cache for functions and methods in a specified directory.
 
 This cache then can later be used via `iter-docs`
 
 ```bash
-pythion build-doc-cache <root_dir> [--use_all]
+pythion build-cache <root_dir> [--use_all]
 ```
 
 - **Arguments:**
@@ -67,7 +67,7 @@ pythion build-doc-cache <root_dir> [--use_all]
 **Example:**
 
 ```bash
-pythion build-doc-cache /path/to/dir --use_all
+pythion build-cache /path/to/dir --use_all
 ```
 
 ### 3. `iter-docs`

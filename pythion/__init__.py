@@ -47,9 +47,9 @@ def make_docs(root_dir: str, custom_instruction: str | None = None):
     "--dry",
     is_flag=True,
     default=False,
-    help="Whether to generate doc strings for all functions, or just the ones without docstrings",
+    help="Do a dry run without actually generating documentation",
 )
-def build_doc_cache(root_dir: str, use_all: bool, dry: bool):
+def build_cache(root_dir: str, use_all: bool, dry: bool):
     """
     Generates documentation cache based on function docstrings in the specified root directory.
 
@@ -59,7 +59,7 @@ def build_doc_cache(root_dir: str, use_all: bool, dry: bool):
         dry (bool): Optional; if set, performs a dry run without making any changes. Defaults to False.
 
     Example:
-        pythion src --use_all --dry
+        pythion build-cache src --use_all --dry
     """
     manager = DocManager(root_dir=root_dir)
     manager.build_doc_cache(use_all, dry)
@@ -86,7 +86,7 @@ def iter_docs(root_dir: str):
 
 
 pythion.add_command(make_docs)
-pythion.add_command(build_doc_cache)
+pythion.add_command(build_cache)
 pythion.add_command(iter_docs)
 
 if __name__ == "__main__":
