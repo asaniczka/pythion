@@ -79,22 +79,15 @@ class DocManager:
             "pythion : ignore",
         ]
         for values in self.indexer.index.values():
-            if use_all:
-                for v in values:
-                    for cmd in ignore_commands:
-                        if cmd in v.source_code:
-                            break
-                    else:
-                        source_codes_to_queue.append(v)
-            else:
-                for v in values:
-                    if v.has_docstring:
-                        continue
-                    for cmd in ignore_commands:
-                        if cmd in v.source_code:
-                            break
-                    else:
-                        source_codes_to_queue.append(v)
+            for v in values:
+                if not use_all and v.has_docstring:
+                    continue
+                for cmd in ignore_commands:
+                    if cmd in v.source_code:
+                        break
+                else:
+                    source_codes_to_queue.append(v)
+
         if not source_codes_to_queue:
             print(
                 "Couldn't find any objects that require docstring. Use `use_all` to generate docstrings for all objects"
@@ -118,10 +111,7 @@ class DocManager:
                     print(f"Error in TPE: {type(e)} - {e}")
                     continue
 
-        save_path = Path(self.cache_dir, self.doc_cache_file_name)
-        with open(save_path, "w", encoding="utf-8") as wf:
-            json.dump([x.model_dump() for x in results], wf)
-
+        self._save_doc_cache(results)
         print(
             "Docstring cache built successfully. Use iter-docs to go through the docstrings"
         )
@@ -168,6 +158,10 @@ class DocManager:
             else:
                 continue
 
+        self._save_doc_cache(save_results)
+
+    def _save_doc_cache(self, save_results: list[SourceDoc]):
+        path = Path(self.cache_dir, self.doc_cache_file_name)
         with open(path, "w", encoding="utf-8") as wf:
             json.dump([x.model_dump() for x in save_results], wf)
             return
