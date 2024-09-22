@@ -59,20 +59,18 @@ class DocManager:
         path = Path(self.cache_dir)
         path.mkdir(parents=True, exist_ok=True)
 
-    def build_doc_cache(self, use_all: bool = False):
+    def build_doc_cache(self, use_all: bool = False, dry: bool = False):
         """
-        Builds a cache of docstrings from source code objects.
+        Builds a cache of docstrings for objects in the indexer.
 
-        This function processes the source code objects indexed by the instance's indexer. If `use_all` is set to True, it queues all source codes; otherwise, it queues only those without existing docstrings. It utilizes a thread pool to handle docstring generation concurrently and updates a progress bar. The results are saved in a specified cache directory in JSON format.
+           This method gathers source code definitions that lack documentation and generates corresponding docstrings. It can filter files based on documented status and a set of ignore commands. The process can run in dry mode to preview changes without making any.
 
-        Args:
-            use_all (bool): Indicates whether to include all source codes (default is False).
+           Args:
+               use_all (bool): If True, include all objects for docstring generation, regardless of existing documentation. Defaults to False.
+               dry (bool): If True, perform a dry run that does not modify data; defaults to False.
 
-        Raises:
-            Any: Captured exceptions during docstring generation are printed, but not raised.
-
-        Returns:
-            None: The function saves the results to a file rather than returning them.
+           Prints:
+               A message indicating the status of the docstring cache building process, including any errors encountered.
         """
         source_codes_to_queue = []
         ignore_commands = [
@@ -96,6 +94,13 @@ class DocManager:
                 "Couldn't find any objects that require docstring. Use `use_all` to generate docstrings for all objects"
             )
         results: list[SourceDoc] = []
+
+        if dry:
+            print(
+                f"{len(source_codes_to_queue)} candidates found for docstring generation. Retry to previous command without --dry to generate docstring cache."
+            )
+            return
+
         with (
             ThreadPoolExecutor(max_workers=50) as tpe,
             tqdm(total=len(source_codes_to_queue)) as pbar,
@@ -184,15 +189,21 @@ class DocManager:
             json.dump([x.model_dump() for x in save_results], wf)
             return
 
-    def make_docstrings(self):
+    def make_docstrings(self, custom_instruction: str | None = None):
         """
-        Generates docstrings for given functions or classes interactively.
+        Generates and copies Python docstrings for functions or classes based on user input.
 
-        Prompts the user to input a function or class name, processes the request, and generates a corresponding docstring. The generated docstring is then copied to the clipboard for ease of use, and a success message is displayed. The function continues to request valid input until a proper name is provided that results in a generated documentation.
+        Args:
+            custom_instruction (str | None): Optional instructions to customize the docstring generation.
+
+        Usage:
+            Run the script in the command line and when prompted, enter the name of the function or class. The generated docstring will be copied to the clipboard for easy pasting.
         """
         while True:
             func_name = input("Enter a function or class name: ")
-            res = self._handle_doc_generation(func_name)
+            res = self._handle_doc_generation(
+                func_name, custom_instruction=custom_instruction
+            )
             if not res:
                 continue
             pyperclip.copy(res.doc_string)
@@ -205,6 +216,7 @@ class DocManager:
         function_name: str | None = None,
         object_def: SourceCode | None = None,
         pbar: tqdm | None = None,
+        custom_instruction: str | None = None,
     ) -> SourceDoc | None:
         """
         Generates a documentation string for a specified function or object.
@@ -240,7 +252,11 @@ class DocManager:
 
         try:
             doc_string = self._generate_doc(
-                obj_name, source_code.source_code, dependencies, silence=bool(pbar)
+                obj_name,
+                source_code.source_code,
+                dependencies,
+                silence=bool(pbar),
+                custom_instruction=custom_instruction,
             )
         except Exception as e:
             print(e)
@@ -290,6 +306,7 @@ class DocManager:
         func_code: str,
         dependencies: list[str] | None,
         silence: bool = False,
+        custom_instruction: str | None = None,
     ):
         """
         Generates docstrings for Python functions using the OpenAI model.
@@ -322,22 +339,32 @@ class DocManager:
             main_object_name: str
             main_object_docstring: str
 
-        completion = client.beta.chat.completions.parse(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a Python docstring writer. Your task is to look at the main object, it's arguments, dependencies and write a docstring for the main object. Only share the the docstring for the main object.\n\nThe format I want is Google Style. Try to keep the length to less than 150 words. Format neatly",
-                },
-                {"role": "user", "content": "Main Object Name: " + func_name},
-                {"role": "user", "content": "Main Object source code: " + func_code},
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a Python docstring writer. Your task is to look at the main object, it's arguments, dependencies and write a docstring for the main object. Only share the the docstring for the main object.\n\nThe format I want is Google Style. Try to keep the length to less than 150 words. Format neatly",
+            },
+            {"role": "user", "content": "Main Object Name: " + func_name},
+            {"role": "user", "content": "Main Object source code: " + func_code},
+            {
+                "role": "user",
+                "content": "Dependency Source code: " + "\n\n".join(dependencies),
+            },
+        ]
+        if custom_instruction:
+            messages.append(
                 {
                     "role": "user",
-                    "content": "Dependency Source code: " + "\n\n".join(dependencies),
-                },
-            ],
+                    "content": "Additional Instructions: " + custom_instruction,
+                }
+            )
+
+        completion = client.beta.chat.completions.parse(
+            model="gpt-4o-mini",
+            messages=messages,  # type:ignore
             response_format=DocString,
         )
+
         ai_repsonse = completion.choices[0].message
         if not ai_repsonse.parsed:
             return None

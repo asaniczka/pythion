@@ -1,10 +1,10 @@
 import click
-from wrapworks import cwdtoenv # type: ignore
+from wrapworks import cwdtoenv  # type: ignore
 
 cwdtoenv()
 
-from pythion.src.indexer import NodeIndexer
 from pythion.src.doc_writer import DocManager
+from pythion.src.indexer import NodeIndexer
 
 
 @click.group()
@@ -18,28 +18,52 @@ def pythion():
 @click.command()
 @click.argument("root_dir")
 @click.option(
+    "-ca", "--custom-instruction", help="Any custom instructions to provide to the AI"
+)
+def make_docs(root_dir: str, custom_instruction: str | None = None):
+    """
+    Generates docstrings for Python files located in the specified root directory.
+
+    Args:
+        root_dir (str): The path to the directory containing Python files.
+        custom_instruction (str, optional): Custom instruction to guide the AI in generating docstrings.
+
+    Examples:
+        - pythion make-docs src -ca 'Provide detailed explanations'.
+    """
+    manager = DocManager(root_dir=root_dir)
+    manager.make_docstrings(custom_instruction)
+
+
+@click.command()
+@click.argument("root_dir")
+@click.option(
     "-ua",
     "--use_all",
     is_flag=True,
     default=False,
     help="Whether to generate doc strings for all functions, or just the ones without docstrings",
 )
-def build_doc_cache(root_dir: str, use_all: bool):
+@click.option(
+    "--dry",
+    is_flag=True,
+    default=False,
+    help="Whether to generate doc strings for all functions, or just the ones without docstrings",
+)
+def build_doc_cache(root_dir: str, use_all: bool, dry: bool):
     """
-    Builds a documentation cache for functions and methods in the specified directory.
-
-    This command scans the Python files in the given `root_dir` and generates or updates docstrings,
-    optionally including functions that already have existing docstrings based on the `use_all` flag.
+    Generates documentation cache based on function docstrings in the specified root directory.
 
     Args:
-        root_dir (str): The directory path where the Python files are located.
-        use_all (bool): If True, generate docstrings for all functions; otherwise, only for those without docstrings.
+        root_dir (str): The root directory containing the Python files whose functions need documentation.
+        use_all (bool): Optional; if set, generates docstrings for all functions. Defaults to False, which means only functions without docstrings will be processed.
+        dry (bool): Optional; if set, performs a dry run without making any changes. Defaults to False.
 
     Example:
-        pythion /path/to/dir --use_all
+        pythion src --use_all --dry
     """
     manager = DocManager(root_dir=root_dir)
-    manager.build_doc_cache(use_all)
+    manager.build_doc_cache(use_all, dry)
 
 
 @click.command()
@@ -55,34 +79,16 @@ def iter_docs(root_dir: str):
     the iter_docs method to handle the processing of each document.
 
     Example:
-        pythion /path/to/dir
+        pythion src
     """
 
     manager = DocManager(root_dir=root_dir)
     manager.iter_docs()
 
 
-@click.command()
-@click.argument("root_dir")
-def make_docstr(root_dir: str):
-    """
-    Generates documentation strings for Python files located in the specified root directory.
-
-    This CLI command utilizes the DocManager class to create or update docstrings by examining the source code in the given `root_dir`. The process includes identifying modules that lack documentation and integrating with a caching system to store generated docstrings for efficient access.
-
-    Args:
-        root_dir (str): The path to the root directory containing the Python files to analyze.
-
-    Example:
-        pythion /path/to/dir
-    """
-    manager = DocManager(root_dir=root_dir)
-    manager.make_docstrings()
-
-
+pythion.add_command(make_docs)
 pythion.add_command(build_doc_cache)
 pythion.add_command(iter_docs)
-pythion.add_command(make_docstr)
 
 if __name__ == "__main__":
     pythion()

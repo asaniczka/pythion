@@ -13,6 +13,7 @@ Pythion is a command-line interface (CLI) tool designed to assist Python develop
 - [Installation](#installation)
 - [Usage](#usage)
 - [Commands](#commands)
+
 ## Installation
 
 You can install Pythion via pip. Open your terminal and enter:
@@ -31,12 +32,12 @@ pythion [OPTIONS] COMMAND [ARGS]...
 
 ## Commands
 
-### 1. `make_docstr`
+### 1. `make-docs`
 
 Generates documentation for any given function or class name.
 
 ```bash
-pythion make-docstr <root_dir>
+pythion make-docs <root_dir>
 ```
 
 - **Arguments:**
@@ -45,7 +46,7 @@ pythion make-docstr <root_dir>
 **Example:**
 
 ```bash
-pythion make-docstr /path/to/dir
+pythion make-docs /path/to/dir
 ```
 
 ### 2. `build-doc-cache`
