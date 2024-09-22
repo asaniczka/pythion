@@ -93,7 +93,6 @@ class DocManager:
             print(
                 "Couldn't find any objects that require docstring. Use `use_all` to generate docstrings for all objects"
             )
-        results: list[SourceDoc] = []
 
         if dry:
             print(
@@ -101,6 +100,7 @@ class DocManager:
             )
             return
 
+        results: list[SourceDoc] = []
         with (
             ThreadPoolExecutor(max_workers=50) as tpe,
             tqdm(total=len(source_codes_to_queue)) as pbar,
