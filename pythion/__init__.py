@@ -12,7 +12,6 @@ def pythion():
     """
     Pythion is a command-line interface for managing Python documentation and version control. Use it to generate docstrings, build documentation caches, iterate through documents, and create smart commit messages, all while enhancing your development workflow.
     """
-    pass
 
 
 @click.command()

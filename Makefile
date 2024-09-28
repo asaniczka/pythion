@@ -1,5 +1,5 @@
 format:
-	- autoflake -ri --remove-all-unused-imports pythion/src
+	- autoflake -ri --remove-all-unused-imports .
 	- isort  --profile black .
 	- black --target-version py310 .
 

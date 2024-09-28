@@ -19,7 +19,6 @@ Usage:
 
 import subprocess
 
-import pyperclip
 from openai import OpenAI
 from pydantic import BaseModel
 
@@ -29,8 +28,20 @@ from pythion.src.models.prompt_models import COMMIT_PROFILES
 def generate_message(
     git_diff: str,
     custom_instruction: str | None = None,
-):
-    """"""
+) -> str | None:
+    """
+    Generates a git commit message based on provided git diff and optional custom instructions.
+
+        Args:
+            git_diff (str): The git diff string containing changes.
+            custom_instruction (str | None): Optional custom instructions for the commit message generation.
+
+        Returns:
+            str | None: The generated commit message or None if generation fails.
+
+        Raises:
+            Any relevant exceptions from the OpenAI client or message parsing.
+    """
     client = OpenAI(timeout=30)
 
     class Step(BaseModel):
@@ -72,7 +83,16 @@ def generate_message(
     return ai_repsonse.parsed.commit_message
 
 
-def get_staged_changes():
+def get_staged_changes() -> str | None:
+    """
+    Retrieves the list of staged changes in the current Git repository.
+
+        This function uses Git's command line interface to get the differences between the staged changes and the last commit.
+        If there is an error during the subprocess execution, it prints an error message with the details.
+
+        Returns:
+            str: A string containing the staged changes.
+    """
     try:
         staged_diff = subprocess.check_output(
             ["git", "diff", "--cached"], stderr=subprocess.STDOUT
@@ -81,21 +101,42 @@ def get_staged_changes():
 
     except subprocess.CalledProcessError as e:
         print(f"Error getting staged changes: {e.output.decode('utf-8')}")
+        return None
 
 
 def make_commit(commit_message):
+    """
+    Creates a Git commit with the provided commit message.
+
+        Args:
+            commit_message (str): The message to be included with the commit.
+
+        Returns:
+            int: The return code from the Git command indicating success or failure.
+
+        Raises:
+            subprocess.CalledProcessError: If the Git command fails.
+    """
     try:
-        staged_diff = subprocess.check_call(
+        good_commit = subprocess.check_call(
             ["git", "commit", ".", "-m", commit_message]
         )
-        return staged_diff
 
     except subprocess.CalledProcessError as e:
         print(f"Error making commit: {e.output.decode('utf-8')}")
 
 
 def handle_commit(custom_instruction: str | None = None, profile: str | None = None):
+    """
+    Handles the Git commit process by generating a commit message based on staged changes.
 
+        Args:
+            custom_instruction (str | None): An optional custom instruction to guide the commit message.
+            profile (str | None): An optional profile to apply predefined custom instructions.
+
+        Raises:
+            RuntimeError: If no changes are staged for commit or if the provided profile is not found.
+    """
     diff = get_staged_changes()
 
     if not diff:

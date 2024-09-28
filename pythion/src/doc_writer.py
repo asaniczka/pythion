@@ -23,7 +23,7 @@ from wrapworks import cwdtoenv  # type: ignore
 cwdtoenv()
 from pythion.src.indexer import NodeIndexer
 from pythion.src.models.core_models import SourceCode, SourceDoc
-from pythion.src.models.prompt_models import COMMIT_PROFILES, DOC_PROFILES
+from pythion.src.models.prompt_models import DOC_PROFILES
 
 
 class DocManager:
@@ -235,7 +235,15 @@ class DocManager:
             )
 
     def make_module_docstrings(self, custom_instruction: str | None = None):
-        """"""
+        """
+        Generate module docstrings based on user-provided module names.
+
+            Args:
+                custom_instruction (str | None): Optional instructions to customize the docstring generation process.
+
+            Returns:
+                None: Copies the generated docstring to clipboard and informs the user of the location.
+        """
 
         while True:
             module_name = input("Enter a new module name: ")
@@ -254,7 +262,19 @@ class DocManager:
     def _handle_module_doc_generation(
         self, module_name: str, custom_instruction: str | None = None
     ):
-        """"""
+        """
+        Generates documentation strings for a specified Python module based on its source code.
+
+            Args:
+                module_name (str): The name of the module for which to generate documentation.
+                custom_instruction (str | None): Additional instructions for customization, if any.
+
+            Returns:
+                tuple: A tuple containing the generated docstring and a link to the module's path in VSCode.
+
+            Raises:
+                Exception: If the module source code cannot be processed for documentation generation.
+        """
 
         similar_modules = [mod for mod in self.indexer.file_index if module_name in mod]
 
@@ -298,7 +318,7 @@ class DocManager:
     def _handle_doc_generation(
         self,
         function_name: str | None = None,
-        object_def: SourceCode | None | BaseModel = None,
+        object_def: SourceCode | None = None,
         pbar: tqdm | None = None,
         custom_instruction: str | None = None,
     ) -> SourceDoc | None:
@@ -324,7 +344,7 @@ class DocManager:
         if not function_name and not object_def:
             raise ValueError("Please provide a function name or an object_def")
 
-        source_code = object_def or self._get_source_code_from_name(function_name)
+        source_code = object_def or self._get_source_code_from_name(function_name)  # type: ignore #fmt:skip
         if not source_code:
             print(
                 "ERROR: Unable to locate object in the index. Double check the name you entered."
@@ -332,7 +352,7 @@ class DocManager:
             return None
 
         obj_name = source_code.object_name
-        dependencies = self.indexer.get_dependencies(obj_name)
+        dependencies = self.indexer.get_dependencies(obj_name, source_code.object_id)
 
         try:
             doc_string = self._generate_doc(
@@ -460,7 +480,17 @@ class DocManager:
         module_source_code: str,
         custom_instruction: str | None = None,
     ):
-        """"""
+        """
+        Generates docstrings for a specified module.
+
+            Args:
+                module_name (str): The name of the module to document.
+                module_source_code (str): The source code of the module.
+                custom_instruction (str | None, optional): Additional instructions for docstring generation. Defaults to None.
+
+            Returns:
+                str | None: The generated docstring for the module, or None if generation fails.
+        """
         print(f"Generating docstrings for module '{module_name}'")
         client = OpenAI(timeout=30)
 

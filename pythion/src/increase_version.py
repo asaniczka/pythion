@@ -10,7 +10,18 @@ def increment_patch_version(version):
 
 
 def execute_bump_version(file_path: str, version_regex: str) -> None:
-    """"""
+    """
+    Updates the version number in a specified file.
+
+        This function searches for a version number in a given file and increments the patch version.
+
+        Args:
+            file_path (str): The path to the file containing the version number.
+            version_regex (str): The regular expression used to find the version number in the file.
+
+        Raises:
+            SystemExit: If the version variable is not found in the file.
+    """
 
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read()

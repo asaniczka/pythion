@@ -328,12 +328,25 @@ class NodeIndexer:
 
     def _get_call_tree(
         self,
-        node: ast.FunctionDef | ast.ClassDef,
-        visited: set[str] = None,
+        node: ast.FunctionDef | ast.ClassDef | ast.Module | ast.stmt,
+        visited: set[str] | None = None,
         recursive: bool = False,
     ) -> set[str]:
-        """"""
-        visited: set[str] = visited or set()
+        """
+        Retrieve the call tree for a given function or class definition.
+
+        This method analyzes the provided AST node and collects all function and class calls,
+        including those from recursively called definitions if specified.
+
+        Args:
+            node (ast.FunctionDef | ast.ClassDef): The AST node representing a function or class to analyze.
+            visited (set[str], optional): A set to keep track of already visited object names to prevent duplication.
+            recursive (bool, optional): If True, also include calls from definitions that are reached recursively.
+
+        Returns:
+            set[str]: A set of names for all collected function and class calls.
+        """
+        visited = visited or set()
         call_names: set[str] = set()
         call_finder = CallFinder(call_names)
         call_finder.visit(node)
@@ -356,7 +369,17 @@ class NodeIndexer:
         return call_names
 
     def _get_args(self, node: ast.FunctionDef) -> set[str] | None:
-        """"""
+        """
+        Retrieve argument types from a function definition node.
+
+        Args:
+            node (ast.FunctionDef): The function definition node from which to extract
+                the argument types.
+
+        Returns:
+            set[str] | None: A set of argument type names if the node is a valid
+                function definition, or None if it is not.
+        """
         if not isinstance(node, ast.FunctionDef):
             return None
         arg_types: set[str] = set()
@@ -370,7 +393,15 @@ class NodeIndexer:
         return arg_types
 
     def _get_arg_from_binop(self, op: ast.BinOp) -> set[str]:
-        """"""
+        """
+        Retrieve argument names from a binary operation.
+
+        Args:
+            op (ast.BinOp): The binary operation from which to extract argument names.
+
+        Returns:
+            set[str]: A set of argument names found in the binary operation.
+        """
 
         arg_types: set[str] = set()
         for nest_op in [op.left, op.right]:
@@ -385,13 +416,31 @@ class NodeIndexer:
     def get_dependencies(
         self,
         obj_name: str,
-        obj_id: str,
+        obj_id: str | None = None,
         recursive: bool = False,
     ) -> list[str] | None:
-        """"""
+        """
+        Retrieves the dependencies for a specified object name.
+
+        Args:
+            obj_name (str): The name of the object to find dependencies for.
+            obj_id (str | None, optional): The unique identifier for the specific object instance. Defaults to None.
+            recursive (bool, optional): Determines whether to search for dependencies recursively. Defaults to False.
+
+        Returns:
+            list[str] | None: A list of JSON strings representing the dependencies, or None if not found.
+
+        Raises:
+            TypeError: If there is a name collision and no object ID is provided.
+        """
         objs = self.index.get(obj_name)
         if not objs:
             return None
+
+        if len(objs) > 1 and not obj_id:
+            raise TypeError(
+                "ERROR: Name collision. Unable to get dependencies without an object ID"
+            )
 
         for obj in objs:
             if obj.object_id == obj_id:
@@ -401,18 +450,19 @@ class NodeIndexer:
             return None
 
         arg_types: set[str] = set()
-        node = ast.parse(node.source_code)
+        node_src: ast.Module | ast.stmt | ast.FunctionDef | ast.ClassDef = ast.parse(
+            node.source_code
+        )
         if isinstance(node, ast.Module):
             node = node.body[0]  # type: ignore
 
-        call_names = self._get_call_tree(node, recursive=recursive)
+        call_names = self._get_call_tree(node_src, recursive=recursive)
 
         for call in chain([obj_name], call_names):
             source = self.index.get(call)
             if source:
                 for obj in source:
-                    source_code = ast.parse(obj.source_code)
-
+                    source_code: ast.Module | ast.stmt = ast.parse(obj.source_code)
                     if isinstance(source_code, ast.Module):
                         source_code = source_code.body[0]
                     if not isinstance(source_code, ast.FunctionDef):
@@ -429,7 +479,8 @@ class NodeIndexer:
             if dep not in self.index:
                 continue
             dependencies.extend(list(self.index[dep]))
-        dependencies_src: list[str] = [
+
+        return [
             json.dumps(
                 {
                     "object_name": x.object_name,
@@ -439,7 +490,6 @@ class NodeIndexer:
             )
             for x in dependencies
         ]
-        return dependencies_src
 
     def warn(self):
         """
