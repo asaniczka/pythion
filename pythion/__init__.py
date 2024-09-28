@@ -1,8 +1,21 @@
+"""
+This module implements the 'pythion' CLI for Python documentation and version control management. 
+
+Key Features:
+- Generate and manage Python docstrings.
+- Create documentation caches based on existing function docstrings.
+- Iterate through documents in a specified directory.
+- Execute commits with AI-generated messages.
+"""
+
+import sys
 import click
-from wrapworks import cwdtoenv  # type: ignore
+from wrapworks import cwdtoenv
+
 
 cwdtoenv()
 
+from pythion.src.increase_version import execute_bump_version
 from pythion.src.commit_writer import handle_commit
 from pythion.src.doc_writer import DocManager
 
@@ -25,29 +38,55 @@ def pythion():
     type=click.Choice(["fastapi", "cli"]),
     help="Select a predefined custom instruction set",
 )
-def make_docs(
+def docs(
     root_dir: str, custom_instruction: str | None = None, profile: str | None = None
 ):
     """
-    Generates docstrings for Python code in the specified root directory.
+    Generate and manage docstrings for Python projects.
+
+    This command initializes the DocManager and facilitates the creation of docstrings by accepting a root directory,
+    custom instructions, and a predefined profile selection.
 
     Args:
-        root_dir (str): The root directory containing Python code files.
-        custom_instruction (str | None): Optional; any specific instructions for generating docstrings.
-        profile (str | None): Optional; can be 'fastapi' or 'cli' to specify the generation profile.
+        root_dir (str): The root directory of the Python project for which to generate docstrings.
+        custom_instruction (str | None, optional): Any custom instructions to provide to the AI for generating docstrings.
+        profile (str | None, optional): Select a predefined custom instruction set. Choices are 'fastapi' or 'cli'.
 
     Examples:
-        - Generate docstrings for code in the specified directory with default settings
-        make_docs /path/to/code
+        To generate docstrings in the specified root directory:
+            pythion docs /path/to/project
 
-        - Generate docstrings with a custom instruction
-        make_docs /path/to/code --custom-instruction "Focus on parameters documentation"
+        To generate docstrings with a custom instruction:
+            pythion docs /path/to/project --custom-instruction "Use concise language."
 
-        - Generate docstrings using the 'fastapi' profile
-        make_docs /path/to/code -p fastapi
+        To use a predefined profile:
+            pythion docs /path/to/project --profile fastapi
     """
     manager = DocManager(root_dir=root_dir)
     manager.make_docstrings(custom_instruction, profile)
+
+
+@click.command()
+@click.argument("root_dir")
+@click.option(
+    "-ci", "--custom-instruction", help="Any custom instructions to provide to the AI"
+)
+def module_docs(root_dir: str, custom_instruction: str | None = None):
+    """
+    Generates Python module documentation as per provided parameters.
+
+    Args:
+        root_dir (str): The root directory of the Python project.
+        custom_instruction (str | None): Optional custom instructions for the AI to tailor the documentation generation.
+
+    Usage:
+        To generate documentation for a specific project's modules, you can run the following command:
+            pythion module_docs /path/to/project --custom-instruction "Include examples in docstrings"
+
+    This will initiate the docstring generation process for modules in the specified directory, adhering to any custom instructions you have provided.
+    """
+    manager = DocManager(root_dir=root_dir)
+    manager.make_module_docstrings(custom_instruction)
 
 
 @click.command()
@@ -134,12 +173,48 @@ def make_commit(custom_instruction: str | None = None, profile: str | None = Non
         handle_commit(custom_instruction, profile)
     except RuntimeError as e:
         print(e)
+        sys.exit(1)
 
 
-pythion.add_command(make_docs)
+@click.command()
+@click.option("-r", "--version-regex", help="Regex pattern to match", required=True)
+@click.option(
+    "-f",
+    "--file-path",
+    help="Fullly qualified path that contains the version file",
+    required=True,
+)
+def bump_version(version_regex: str, file_path: str):
+    """
+    Bump version numbers in a specified version file.
+
+    Usage:
+      bump_version --version-regex <pattern> --file-path <file>
+
+    Args:
+      version_regex (str): A regex pattern to match the version string in the file.
+      file_path (str): The full path to the file that contains the version string.
+
+    Examples:
+      bump_version --version-regex 'version="(.*?)"' --file-path '/path/to/version_file.txt'
+
+    This will search for the version format 'version="x.y.z"' in the specified file and increment the patch version.
+    """
+
+    print(file_path, version_regex)
+    try:
+        execute_bump_version(file_path, version_regex)
+    except RuntimeError as e:
+        print(e)
+        sys.exit(1)
+
+
+pythion.add_command(docs)
+pythion.add_command(module_docs)
 pythion.add_command(build_cache)
 pythion.add_command(iter_docs)
 pythion.add_command(make_commit)
+pythion.add_command(bump_version)
 
 if __name__ == "__main__":
     pythion()

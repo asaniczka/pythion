@@ -1,11 +1,11 @@
 """
-This module provides tools to manage docstring generation for Python scripts.
+This module provides tools for generating and managing docstrings in Python scripts.
 
-It includes:
+It offers functionalities such as:
 
-- Building a cache of existing docstrings for analysis and reuse.
-- Manual management of docstrings, including copying and editing.
-- AI-generated docstrings tailored to Python functions, classes, and modules.
+- Building a cache of existing docstrings for easy analysis and future use.
+- Managing docstrings manually, including copying, editing, and iterating through cached entries.
+- Generating AI-assisted docstrings specifically tailored for functions, classes, and modules.
 """
 
 # pylint: disable=wrong-import-position
@@ -280,6 +280,7 @@ class DocManager:
 
         if not similar_modules:
             print("Unable to locate module. Write using the full file path")
+            return
 
         if len(similar_modules) > 1:
             print("Found multiple elements. Please select the proper one:")
@@ -413,16 +414,17 @@ class DocManager:
         custom_instruction: str | None = None,
     ):
         """
-        Generates docstrings for Python functions using the OpenAI model.
+        Generate a docstring for the specified function.
 
         Args:
-            func_name (str): The name of the function for which to generate the docstring.
-            func_code (str): The source code of the function as a string.
-            dependencies (list[str]): A list of dependencies required for the function.
-            silence (bool, optional): If True, suppresses the output. Defaults to False.
+            func_name (str): The name of the function to generate a docstring for.
+            func_code (str): The source code of the function.
+            dependencies (list[str] | None): A list of dependencies used in the function. Defaults to None.
+            silence (bool): If True, suppresses output messages. Defaults to False.
+            custom_instruction (str | None): Any additional custom instructions for generating the docstring. Defaults to None.
 
         Returns:
-            str: The generated docstring for the specified function.
+            str | None: The generated docstring, or None if generation fails.
         """
         if not silence:
             print(f"Generating docstrings for '{func_name}'")
@@ -446,7 +448,7 @@ class DocManager:
         messages = [
             {
                 "role": "system",
-                "content": "You are a Python docstring writer. Your task is to look at the main object, it's arguments, dependencies and write a docstring for the main object. Only share the the docstring for the main object.\n\nThe format I want is Google Style. Format neatly with list items (if any). Keep documentation simple, minimal and don't repeat the obvious.",
+                "content": "You are a Python docstring writer. Your task is to look at the main object, it's arguments, dependencies and write a docstring for the main object. Only share the the docstring for the main object.\n\nThe format I want is Google Style. Format neatly with list items (if any). Keep documentation simple, minimal and don't repeat the obvious. Don't indent headings",
             },
             {"role": "user", "content": "Main Object Name: " + func_name},
             {"role": "user", "content": "Main Object source code: " + func_code},
@@ -510,7 +512,7 @@ class DocManager:
         messages = [
             {
                 "role": "system",
-                "content": "You are a Python module docstring writer. Your task is to look at the module source code and write a doc string to put at the top of the file.\n\nThe format I want is Google Style. Format neatly with list items (if any). Keep documentation simple, minimal and don't repeat the obvious. Ignore any existing module doc strings and write from scratch to provde better details and improved formatting",
+                "content": "You are a Python module docstring writer. Your task is to look at the module source code and write a doc string to put at the top of the file.\n\nThe format I want is Google Style. Format neatly with list items (if any). Keep documentation simple, minimal and don't repeat the obvious. Ignore any existing module doc strings and write from scratch to provde better details and improved formatting. Keep sentences short.",
             },
             {"role": "user", "content": "Module Name: " + module_name},
             {"role": "user", "content": "Module source code: " + module_source_code},

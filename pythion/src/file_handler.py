@@ -1,7 +1,6 @@
 """
-This module contains functions for handling and retrieving information from files.
-
-Specifically, it provides a method to find the location of classes and functions within a specified Python file.
+This module contains functions to handle file operations related to locating
+classes and functions within specified Python files.
 """
 
 from typing import Literal
