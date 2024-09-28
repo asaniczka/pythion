@@ -10,7 +10,7 @@ from pythion.src.commit_writer import handle_commit
 @click.group()
 def pythion():
     """
-    A command-line interface (CLI) application built using Click. This application serves as the entry point for various commands and functionalities, allowing users to interact with the application easily. It organizes different command groups under a unified interface and provides user-friendly command-line options.
+    Pythion is a command-line interface for managing Python documentation and version control. Use it to generate docstrings, build documentation caches, iterate through documents, and create smart commit messages, all while enhancing your development workflow.
     """
     pass
 

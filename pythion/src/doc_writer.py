@@ -1,3 +1,13 @@
+"""
+This module provides tools to manage docstring generation for Python scripts.
+
+It includes:
+
+- Building a cache of existing docstrings for analysis and reuse.
+- Manual management of docstrings, including copying and editing.
+- AI-generated docstrings tailored to Python functions, classes, and modules.
+"""
+
 # pylint: disable=wrong-import-position
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -211,6 +221,66 @@ class DocManager:
                 f"Copied to clipboard. Manually paste docstring @ {res.source.location}"
             )
 
+    def make_module_docstrings(self, custom_instruction: str | None = None):
+
+        while True:
+            module_name = input("Enter a new module name: ")
+
+            res = self._handle_module_doc_generation(
+                module_name, custom_instruction=custom_instruction
+            )
+
+            if not res:
+                continue
+
+            doc_string, path = res
+            pyperclip.copy(doc_string)
+            print(f"Copied to clipboard. Manually paste docstring @ {path}")
+
+    def _handle_module_doc_generation(
+        self, module_name: str, custom_instruction: str | None = None
+    ):
+        """"""
+
+        similar_modules = [mod for mod in self.indexer.file_index if module_name in mod]
+
+        if not similar_modules:
+            print("Unable to locate module. Write using the full file path")
+
+        if len(similar_modules) > 1:
+            print("Found multiple elements. Please select the proper one:")
+            for idx, item in enumerate(similar_modules):
+                print(f"{idx:<4}:{item}...")
+            index = int(input("Type index: "))
+
+            module_path = similar_modules[index]
+        else:
+            module_path = similar_modules[0]
+
+        path = Path(module_path)
+        source_code = path.read_text(encoding="utf-8")
+
+        try:
+            res = self._generate_module_doc(
+                path.name, source_code, custom_instruction=custom_instruction
+            )
+        except Exception as e:
+            print(e)
+            print("Unable to generate doc string")
+            return None
+
+        if not res:
+            print("Unable to generate doc string")
+
+        doc_string = res.strip(" '\"\n")
+        doc_string = '"""\n' + doc_string + '\n"""'
+
+        vs_link_path = (
+            f"[link=vscode://file//{str(path.absolute())}:1]{path.name}[/link]"
+        )
+
+        return doc_string, vs_link_path
+
     def _handle_doc_generation(
         self,
         function_name: str | None = None,
@@ -370,11 +440,60 @@ class DocManager:
             return None
         return ai_repsonse.parsed.main_object_docstring
 
+    def _generate_module_doc(
+        self,
+        module_name: str,
+        module_source_code: str,
+        custom_instruction: str | None = None,
+    ):
+        """"""
+        print(f"Generating docstrings for module '{module_name}'")
+        client = OpenAI(timeout=30)
+
+        class Step(BaseModel):
+            """#pythion:ignore"""
+
+            why_does_this_module_exist: str | None = None
+            what_purpose_does_it_serve: str | None = None
+
+        class DocString(BaseModel):
+            """#pythion:ignore"""
+
+            steps: list[Step]
+            module_name: str
+            module_docstring: str
+
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a Python module docstring writer. Your task is to look at the module source code and write a doc string to put at the top of the file.\n\nThe format I want is Google Style. Format neatly with list items (if any). Keep documentation simple, minimal and don't repeat the obvious. Ignore any existing module doc strings and write from scratch to provde better details and improved formatting",
+            },
+            {"role": "user", "content": "Module Name: " + module_name},
+            {"role": "user", "content": "Module source code: " + module_source_code},
+        ]
+        if custom_instruction:
+            messages.append(
+                {
+                    "role": "user",
+                    "content": "Additional Instructions: " + custom_instruction,
+                }
+            )
+
+        completion = client.beta.chat.completions.parse(
+            model="gpt-4o-mini",
+            messages=messages,  # type:ignore
+            response_format=DocString,
+        )
+
+        ai_repsonse = completion.choices[0].message
+        if not ai_repsonse.parsed:
+            return None
+        return ai_repsonse.parsed.module_docstring
+
 
 if __name__ == "__main__":
     from dotenv import load_dotenv
 
     load_dotenv()
     manager = DocManager(".")
-    manager.build_doc_cache(use_all=False)
-    manager.iter_docs()
+    manager.make_module_docstrings()

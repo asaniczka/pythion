@@ -1,4 +1,6 @@
-""""""
+"""
+This module provides Pydantic models for handling and representing the source code and documentation associated with Python functions and classes, facilitating discovery and management of code artifacts.
+"""
 
 from typing import Literal
 

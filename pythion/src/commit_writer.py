@@ -1,3 +1,22 @@
+"""
+Module for generating and applying git commit messages.
+
+This module provides functionality to:
+
+- Retrieve staged changes in a git repository.
+- Generate a commit message using an OpenAI model based on the retrieved git diff.
+- Make a commit with the generated message.
+
+Functions:
+- `generate_message(git_diff: str, custom_instruction: str | None)`: Generates a commit message based on the provided git diff and optional custom instructions.
+- `get_staged_changes()`: Retrieves the currently staged changes in the git repository.
+- `make_commit(commit_message)`: Executes the git commit command with the given commit message.
+- `handle_commit(custom_instructions: str | None)`: Main function to handle the commit process, integrating the previous functions.
+
+Usage:
+- Run the module directly to perform the commit process with optional custom instructions.
+"""
+
 import subprocess
 
 import pyperclip

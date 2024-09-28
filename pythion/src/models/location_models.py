@@ -1,3 +1,7 @@
+"""
+This module contains the ObjectLocation class, which represents the location of a file along with a specific row number. It allows users to easily create links for fast access to specific points in files within Visual Studio Code.
+"""
+
 import os
 
 from pydantic import BaseModel

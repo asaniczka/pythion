@@ -1,5 +1,17 @@
 """
-Main indexer of pythion
+Main indexer for Python source code.
+
+This module traverses a specified directory, analyzes Python files to extract function and class definitions, and constructs an index for easy retrieval of dependencies.
+
+### Classes:
+- `CallFinder`: Traverses AST nodes to find function call names.
+- `NodeTransformer`: Cleans AST nodes and indexes function and class details.
+- `NodeIndexer`: Builds and manages the index of Python source files.
+
+### Functions:
+- `build_index()`: Constructs the index by going through the directory.
+- `_remove_common_syntax()`: Cleans index by removing common syntax entries.
+- `get_dependencies(func_name)`: Finds and retrieves dependencies for a specified function.
 """
 
 # pylint: disable=wrong-import-position
@@ -241,6 +253,7 @@ class NodeIndexer:
         """"""
         self.root_dir = root_dir
         self.index: dict[str, set[SourceCode]] = defaultdict(set)
+        self.file_index: set = set()
         self.folders_to_ignore = [".venv", ".mypy_cache"]
         if folders_to_ignore:
             self.folders_to_ignore.extend(folders_to_ignore)
@@ -272,6 +285,7 @@ class NodeIndexer:
                     if not file.endswith(".py"):
                         continue
                     file_path = Path(root, file)
+                    self.file_index.add(str(file_path))
                     transformer = NodeTransformer(self.index, str(file_path))
                     tree = ast.parse(file_path.read_text(encoding="utf-8"))
                     for node in ast.walk(tree):
