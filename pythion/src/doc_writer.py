@@ -298,7 +298,7 @@ class DocManager:
     def _handle_doc_generation(
         self,
         function_name: str | None = None,
-        object_def: SourceCode | None = None,
+        object_def: SourceCode | None | BaseModel = None,
         pbar: tqdm | None = None,
         custom_instruction: str | None = None,
     ) -> SourceDoc | None:

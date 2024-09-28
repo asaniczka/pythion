@@ -102,6 +102,9 @@ class CallFinder(ast.NodeVisitor):
         if isinstance(node.func, ast.Name):
             self.call_names.add(node.func.id)
 
+        if isinstance(node.func, ast.Attribute):
+            self.call_names.add(node.func.attr)
+
 
 class NodeTransformer(ast.NodeTransformer):
     """
@@ -322,53 +325,66 @@ class NodeIndexer:
         for syntax in common_syntax:
             self.index.pop(syntax, None)
 
-    def _get_call_tree(self, node: ast.FunctionDef | ast.ClassDef) -> list[str]:
-        """
-        Extracts names of function calls from a given AST node.
-
-        Args:
-            node (ast.FunctionDef | ast.ClassDef): The AST node to analyze, which can be a function or a class definition.
-
-        Returns:
-            list[str]: A list of names of function calls found within the specified AST node.
-        """
+    def _get_call_tree(
+        self,
+        node: ast.FunctionDef | ast.ClassDef,
+        visited: set[str] = None,
+        recursive: bool = False,
+    ) -> set[str]:
+        """"""
+        visited: set[str] = visited or set()
         call_names: set[str] = set()
         call_finder = CallFinder(call_names)
         call_finder.visit(node)
-        return list(call_names)
+        if recursive:
+            for call in deepcopy(call_names):
+                dep_node = self.index.get(call, set())
+                if not dep_node:
+                    continue
+                for sub_node in dep_node:
+                    if sub_node.object_name in visited:
+                        continue
+                    visited.add(sub_node.object_name)
+                    sub_calls = self._get_call_tree(
+                        ast.parse(sub_node.source_code),
+                        recursive=recursive,
+                        visited=visited,
+                    )
+                    call_names.update(sub_calls)
 
-    def _get_args(self, node: ast.FunctionDef) -> list[str] | None:
-        """
-        Extracts the argument types from a given function definition node.
+        return call_names
 
-        Args:
-            self: The instance of the class where this method is defined.
-            node (ast.FunctionDef): The AST node representing a function definition.
-
-        Returns:
-            list[str] | None: A list of argument type names if the node is a function definition; otherwise, returns None.
-        """
+    def _get_args(self, node: ast.FunctionDef) -> set[str] | None:
+        """"""
         if not isinstance(node, ast.FunctionDef):
             return None
-        arg_types = set()
+        arg_types: set[str] = set()
         for arg in node.args.args:
             if isinstance(arg.annotation, ast.Name):
                 arg_types.add(arg.annotation.id)
-        return list(arg_types)
+            if isinstance(arg.annotation, ast.BinOp):
+                sub_types = self._get_arg_from_binop(arg.annotation)
+                arg_types.update(sub_types)
 
-    def get_dependencies(self, func_name: str) -> list[str] | None:
-        """
-        Retrieves the dependencies for a specified function name.
+        return arg_types
 
-        This method searches for the function in an internal index and parses its source code to identify any function calls and argument types used within it. The dependencies are then gathered from the index and returned as a list of source code snippets, truncated to 3000 characters.
+    def _get_arg_from_binop(self, op: ast.BinOp) -> set[str]:
+        """"""
 
-        Args:
-            func_name (str): The name of the function for which dependencies are being retrieved.
+        arg_types: set[str] = set()
+        for nest_op in [op.left, op.right]:
+            if isinstance(nest_op, ast.Name):
+                arg_types.add(nest_op.id)
+            if isinstance(nest_op, ast.BinOp):
+                sub_types = self._get_arg_from_binop(nest_op)
+                arg_types.update(sub_types)
 
-        Returns:
-            list[str] | None: A list of source code snippets representing the dependencies,
-            or None if the function is not found in the index.
-        """
+        return arg_types
+
+    def get_dependencies(
+        self, func_name: str, recursive: bool = False
+    ) -> list[str] | None:
+        """"""
         func = self.index.get(func_name)
         if not func:
             return None
@@ -377,13 +393,30 @@ class NodeIndexer:
         if isinstance(node, ast.Module):
             node = node.body[0]  # type: ignore
 
-        call_names = self._get_call_tree(node)  # type: ignore
-        arg_types = self._get_args(node)  # type: ignore
+        call_names = self._get_call_tree(node, recursive=recursive)
+
+        arg_types: set[str] = set()
+        for call in chain([func_name], call_names):
+            source = self.index.get(call)
+            if source:
+                for obj in source:
+                    source_code = ast.parse(obj.source_code)
+                    if isinstance(source_code, ast.Module):
+                        source_code = source_code.body[0]
+
+                    if not isinstance(source_code, ast.FunctionDef):
+                        continue
+                    args = self._get_args(source_code)
+                    if args:
+                        arg_types.update(args)
+            if not recursive:
+                break
 
         dependencies: list[SourceCode] = []
-        for dep in chain(call_names, arg_types or []):
-            if dep in self.index:
-                dependencies.extend(list(self.index[dep]))
+        for dep in chain(call_names, arg_types):
+            if dep not in self.index:
+                continue
+            dependencies.extend(list(self.index[dep]))
         dependencies_src: list[str] = [x.source_code[:3000] for x in dependencies]
         return dependencies_src
 
@@ -414,4 +447,4 @@ class NodeIndexer:
 
 if __name__ == "__main__":
     indexer = NodeIndexer(".")
-    print(indexer.index)
+    d = indexer.get_dependencies("make_docstrings", recursive=True)
