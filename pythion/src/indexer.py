@@ -383,30 +383,41 @@ class NodeIndexer:
         return arg_types
 
     def get_dependencies(
-        self, func_name: str, recursive: bool = False
+        self,
+        obj_name: str,
+        obj_id: str,
+        recursive: bool = False,
     ) -> list[str] | None:
         """"""
-        func = self.index.get(func_name)
-        if not func:
+        objs = self.index.get(obj_name)
+        if not objs:
             return None
 
-        node = ast.parse(list(func)[0].source_code)
+        for obj in objs:
+            if obj.object_id == obj_id:
+                node = obj
+                break
+        else:
+            return None
+
+        arg_types: set[str] = set()
+        node = ast.parse(node.source_code)
         if isinstance(node, ast.Module):
             node = node.body[0]  # type: ignore
 
         call_names = self._get_call_tree(node, recursive=recursive)
 
-        arg_types: set[str] = set()
-        for call in chain([func_name], call_names):
+        for call in chain([obj_name], call_names):
             source = self.index.get(call)
             if source:
                 for obj in source:
                     source_code = ast.parse(obj.source_code)
+
                     if isinstance(source_code, ast.Module):
                         source_code = source_code.body[0]
-
                     if not isinstance(source_code, ast.FunctionDef):
                         continue
+
                     args = self._get_args(source_code)
                     if args:
                         arg_types.update(args)
@@ -457,4 +468,7 @@ class NodeIndexer:
 
 if __name__ == "__main__":
     indexer = NodeIndexer(".")
-    d = indexer.get_dependencies("make_docstrings", recursive=True)
+    print(indexer.index)
+    obj_id = input("Pick an ID: ").strip()
+    d = indexer.get_dependencies("make_docstrings", obj_id, recursive=True)
+    print(d)

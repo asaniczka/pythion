@@ -3,8 +3,9 @@ This module provides Pydantic models for handling and representing the source co
 """
 
 from typing import Literal
+from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from pythion.src.file_handler import find_object_location
 
@@ -30,6 +31,7 @@ class SourceCode(BaseModel):
         __repr__: Provides a string representation of the SourceCode instance.
     """
 
+    object_id: str = Field(default_factory=lambda: str(uuid4()))
     object_name: str
     object_type: Literal["function"] | Literal["class"]
     file_path: str
