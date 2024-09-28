@@ -23,6 +23,8 @@ import pyperclip
 from openai import OpenAI
 from pydantic import BaseModel
 
+from pythion.src.models.prompt_models import COMMIT_PROFILES
+
 
 def generate_message(
     git_diff: str,
@@ -92,7 +94,7 @@ def make_commit(commit_message):
         print(f"Error making commit: {e.output.decode('utf-8')}")
 
 
-def handle_commit(custom_instructions: str | None = None):
+def handle_commit(custom_instruction: str | None = None, profile: str | None = None):
 
     diff = get_staged_changes()
 
@@ -101,9 +103,16 @@ def handle_commit(custom_instructions: str | None = None):
             "No Diff found. Make sure to put all changes into the staging area"
         )
 
+    if custom_instruction and profile:
+        print("You cannot provide a custom instruction when providing a profile")
+        return
+
+    if profile:
+        custom_instruction = COMMIT_PROFILES[profile]
+
     commit_message = generate_message(
         diff,
-        custom_instructions,
+        custom_instruction,
     )
     print(commit_message)
     make_commit(commit_message)

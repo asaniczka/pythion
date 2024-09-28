@@ -5,7 +5,7 @@ format:
 
 commit:
 	- git add .
-	- python3 /media/asaniczka/working/packages/pythion/pythion/__init__.py make-commit -ci "Ignore version bumps. This is done via a precommit hook. Also ignore any import removing. This is done automactially by autoflake. Not worthy of commit mention"
+	- python3 /media/asaniczka/working/packages/pythion/pythion/__init__.py make-commit -p no-version
 	- git push
 
 bump:

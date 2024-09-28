@@ -3,8 +3,8 @@ from wrapworks import cwdtoenv  # type: ignore
 
 cwdtoenv()
 
-from pythion.src.doc_writer import DocManager
 from pythion.src.commit_writer import handle_commit
+from pythion.src.doc_writer import DocManager
 
 
 @click.group()
@@ -20,19 +20,35 @@ def pythion():
 @click.option(
     "-ci", "--custom-instruction", help="Any custom instructions to provide to the AI"
 )
-def make_docs(root_dir: str, custom_instruction: str | None = None):
+@click.option(
+    "-p",
+    "--profile",
+    type=click.Choice(["fastapi", "cli"]),
+    help="Select a predefined custom instruction set",
+)
+def make_docs(
+    root_dir: str, custom_instruction: str | None = None, profile: str | None = None
+):
     """
-    Generates docstrings for Python files located in the specified root directory.
+    Generates docstrings for Python code in the specified root directory.
 
     Args:
-        root_dir (str): The path to the directory containing Python files.
-        custom_instruction (str, optional): Custom instruction to guide the AI in generating docstrings.
+        root_dir (str): The root directory containing Python code files.
+        custom_instruction (str | None): Optional; any specific instructions for generating docstrings.
+        profile (str | None): Optional; can be 'fastapi' or 'cli' to specify the generation profile.
 
     Examples:
-        - pythion make-docs src -ca 'Provide detailed explanations'.
+        - Generate docstrings for code in the specified directory with default settings
+        make_docs /path/to/code
+
+        - Generate docstrings with a custom instruction
+        make_docs /path/to/code --custom-instruction "Focus on parameters documentation"
+
+        - Generate docstrings using the 'fastapi' profile
+        make_docs /path/to/code -p fastapi
     """
     manager = DocManager(root_dir=root_dir)
-    manager.make_docstrings(custom_instruction)
+    manager.make_docstrings(custom_instruction, profile)
 
 
 @click.command()
@@ -92,7 +108,13 @@ def iter_docs(root_dir: str):
     "--custom-instruction",
     help="Any custom instructions to provide to the AI to guide the output",
 )
-def make_commit(custom_instruction: str | None = None):
+@click.option(
+    "-p",
+    "--profile",
+    type=click.Choice(["no-version"]),
+    help="Select a predefined custom instruction set",
+)
+def make_commit(custom_instruction: str | None = None, profile: str | None = None):
     """
     Executes a commit by generating a commit message based on staged changes and optional custom instructions.
 
@@ -110,7 +132,7 @@ def make_commit(custom_instruction: str | None = None):
         pythion make-commit --custom-instruction 'Added new feature to optimize performance'
     """
     try:
-        handle_commit(custom_instruction)
+        handle_commit(custom_instruction, profile)
     except RuntimeError as e:
         print(e)
 

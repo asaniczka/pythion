@@ -23,6 +23,7 @@ from wrapworks import cwdtoenv  # type: ignore
 cwdtoenv()
 from pythion.src.indexer import NodeIndexer
 from pythion.src.models.core_models import SourceCode, SourceDoc
+from pythion.src.models.prompt_models import COMMIT_PROFILES, DOC_PROFILES
 
 
 class DocManager:
@@ -199,7 +200,9 @@ class DocManager:
             json.dump([x.model_dump() for x in save_results], wf)
             return
 
-    def make_docstrings(self, custom_instruction: str | None = None):
+    def make_docstrings(
+        self, custom_instruction: str | None = None, profile: str | None = None
+    ):
         """
         Generates and copies Python docstrings for functions or classes based on user input.
 
@@ -209,6 +212,13 @@ class DocManager:
         Usage:
             Run the script in the command line and when prompted, enter the name of the function or class. The generated docstring will be copied to the clipboard for easy pasting.
         """
+        if custom_instruction and profile:
+            print("You cannot provide a custom instruction when providing a profile")
+            return
+
+        if profile:
+            custom_instruction = DOC_PROFILES[profile]
+
         while True:
             func_name = input("Enter a function or class name: ")
             res = self._handle_doc_generation(
@@ -222,6 +232,7 @@ class DocManager:
             )
 
     def make_module_docstrings(self, custom_instruction: str | None = None):
+        """"""
 
         while True:
             module_name = input("Enter a new module name: ")
