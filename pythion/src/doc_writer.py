@@ -217,6 +217,9 @@ class DocManager:
             return
 
         if profile:
+            if profile not in DOC_PROFILES:
+                print("ERROR: Commit profile not found")
+                return
             custom_instruction = DOC_PROFILES[profile]
 
         while True:

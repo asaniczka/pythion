@@ -108,6 +108,9 @@ def handle_commit(custom_instruction: str | None = None, profile: str | None = N
         return
 
     if profile:
+        if profile not in COMMIT_PROFILES:
+            print("ERROR: Commit profile not found")
+            return
         custom_instruction = COMMIT_PROFILES[profile]
 
     commit_message = generate_message(
