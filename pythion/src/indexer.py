@@ -17,6 +17,7 @@ This module traverses a specified directory, analyzes Python files to extract fu
 # pylint: disable=wrong-import-position
 
 import ast
+import json
 import os
 from collections import defaultdict
 from copy import deepcopy
@@ -417,7 +418,16 @@ class NodeIndexer:
             if dep not in self.index:
                 continue
             dependencies.extend(list(self.index[dep]))
-        dependencies_src: list[str] = [x.source_code[:3000] for x in dependencies]
+        dependencies_src: list[str] = [
+            json.dumps(
+                {
+                    "object_name": x.object_name,
+                    "file_path": x.file_path,
+                    "source code": x.source_code[:3000],
+                }
+            )
+            for x in dependencies
+        ]
         return dependencies_src
 
     def warn(self):
