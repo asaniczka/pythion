@@ -4,6 +4,7 @@ from wrapworks import cwdtoenv  # type: ignore
 cwdtoenv()
 
 from pythion.src.doc_writer import DocManager
+from pythion.src.commit_writer import handle_commit
 
 
 @click.group()
@@ -17,7 +18,7 @@ def pythion():
 @click.command()
 @click.argument("root_dir")
 @click.option(
-    "-ca", "--custom-instruction", help="Any custom instructions to provide to the AI"
+    "-ci", "--custom-instruction", help="Any custom instructions to provide to the AI"
 )
 def make_docs(root_dir: str, custom_instruction: str | None = None):
     """
@@ -85,9 +86,39 @@ def iter_docs(root_dir: str):
     manager.iter_docs()
 
 
+@click.command()
+@click.option(
+    "-ci",
+    "--custom-instruction",
+    help="Any custom instructions to provide to the AI to guide the output",
+)
+def make_commit(custom_instruction: str | None = None):
+    """
+    Executes a commit by generating a commit message based on staged changes and optional custom instructions.
+
+    Args:
+        custom_instruction (str | None): Custom instructions to provide to the AI to guide the output of the commit message.
+
+    Raises:
+        RuntimeError: If no changes are found in the staging area when attempting to commit.
+
+    Example Usage:
+        - Run make_commit with no custom instructions
+        pythion make-commit
+
+        - Run make_commit with custom instructions
+        pythion make-commit --custom-instruction 'Added new feature to optimize performance'
+    """
+    try:
+        handle_commit(custom_instruction)
+    except RuntimeError as e:
+        print(e)
+
+
 pythion.add_command(make_docs)
 pythion.add_command(build_cache)
 pythion.add_command(iter_docs)
+pythion.add_command(make_commit)
 
 if __name__ == "__main__":
     pythion()
