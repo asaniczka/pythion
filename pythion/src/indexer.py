@@ -1,17 +1,15 @@
 """
-Main indexer for Python source code.
+Module for indexing Python source code.
+    
+This module defines classes and methods to:
+- Analyze Python files and construct an index of functions and classes.
+- Remove unnecessary docstrings from defined functions and classes.
+- Retrieve dependencies and call relationships between functions and classes.
 
-This module traverses directories, analyzes Python files, and constructs an index for easy retrieval of dependencies.
-
-### Classes:
-- `CallFinder`: Finds function call names in AST.
-- `NodeTransformer`: Cleans AST nodes and indexes function and class details.
-- `NodeIndexer`: Manages the index of Python source files.
-
-### Functions:
-- `build_index()`: Constructs the index by going through the directory.
-- `_remove_common_syntax()`: Cleans index by removing common syntax entries.
-- `get_dependencies(func_name)`: Finds dependencies for a specified function.
+Classes:
+- CallFinder: Finds function call names in the AST.
+- NodeTransformer: Cleans and transforms AST nodes for functions and classes.
+- NodeIndexer: Indexes Python source files and manages dependencies.
 """
 
 # pylint: disable=wrong-import-position

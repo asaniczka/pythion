@@ -1,15 +1,18 @@
 """
-This module provides tools for generating and managing docstrings in Python scripts.
+This module provides functionality to generate, manage, and save Python docstrings.
 
-It offers functionalities such as:
+Key Features:
 
-- Building a cache of existing docstrings for easy analysis and future use.
-- Managing docstrings manually, including copying, editing, and iterating through cached entries.
-- Generating AI-assisted docstrings specifically tailored for functions, classes, and modules.
+- **DocManager Class**: Central class to handle documentation tasks.
+- **Docstring Generation**: Automatic creation of docstrings using AI.
+- **Cache Management**: Creates, stores, and retrieves docstrings from a local cache.
+- **User Interaction**: Prompts users for input to refine docstring generation.
 """
 
 # pylint: disable=wrong-import-position
+import ast
 import json
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
@@ -280,7 +283,7 @@ class DocManager:
 
         if not similar_modules:
             print("Unable to locate module. Write using the full file path")
-            return
+            return sys.exit(1)
 
         if len(similar_modules) > 1:
             print("Found multiple elements. Please select the proper one:")
@@ -293,11 +296,18 @@ class DocManager:
             module_path = similar_modules[0]
 
         path = Path(module_path)
-        source_code = path.read_text(encoding="utf-8")
+        source_code = ast.parse(path.read_text(encoding="utf-8"))
+
+        if isinstance(source_code.body[0], ast.Expr) and isinstance(
+            source_code.body[0].value, ast.Constant
+        ):
+            source_code.body.pop(0)
 
         try:
             res = self._generate_module_doc(
-                path.name, source_code, custom_instruction=custom_instruction
+                path.name,
+                ast.unparse(source_code),
+                custom_instruction=custom_instruction,
             )
         except Exception as e:
             print(e)
@@ -512,7 +522,7 @@ class DocManager:
         messages = [
             {
                 "role": "system",
-                "content": "You are a Python module docstring writer. Your task is to look at the module source code and write a doc string to put at the top of the file.\n\nThe format I want is Google Style. Format neatly with list items (if any). Keep documentation simple, minimal and don't repeat the obvious. Ignore any existing module doc strings and write from scratch to provde better details and improved formatting. Keep sentences short.",
+                "content": "You are a Python module docstring writer. Your task is to look at the module source code and write a doc string to put at the top of the file.\n\nThe format I want is Google Style. Format neatly with list items (if any). Keep documentation simple and minimal. Keep sentences short and use bullet points. Max sentence length: 100 characters",
             },
             {"role": "user", "content": "Module Name: " + module_name},
             {"role": "user", "content": "Module source code: " + module_source_code},

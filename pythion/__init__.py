@@ -1,30 +1,46 @@
 """
-This module implements the 'pythion' CLI for Python documentation and version control management. 
+This module contains commands for managing Python projects with focus on documentation.
 
-Key Features:
-- Generate and manage Python docstrings.
-- Create documentation caches based on existing function docstrings.
-- Iterate through documents in a specified directory.
-- Execute commits with AI-generated messages.
+Features:
+- Generate docstrings for Python projects.
+- Manage module documentation.
+- Create documentation caches.
+- Iterate through project documents.
+- Handle smart commit messages.
+- Bump version numbers.
 """
 
+# pylint: disable=wrong-import-position
 import sys
-import click
-from wrapworks import cwdtoenv
 
+import click
+from wrapworks import cwdtoenv  # type: ignore
 
 cwdtoenv()
 
-from pythion.src.increase_version import execute_bump_version
 from pythion.src.commit_writer import handle_commit
 from pythion.src.doc_writer import DocManager
+from pythion.src.increase_version import execute_bump_version
 
 
 @click.group()
 def pythion():
     """
-    Pythion is a command-line interface for managing Python documentation and version control. Use it to generate docstrings, build documentation caches, iterate through documents, and create smart commit messages, all while enhancing your development workflow.
+    A command line interface (CLI) tool for Python developers.
+
+    This CLI groups various commands and functionalities tailored for Python development.
+
+    Example usage:
+
+      pythion command_name [OPTIONS]
+
+    Commands:
+      command_name     Description of what this command does.
+
+    Options:
+      -h, --help       Show this help message and exit.
     """
+    ...
 
 
 @click.command()
