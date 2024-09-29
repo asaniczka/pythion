@@ -145,14 +145,12 @@ class TestManager:
                 }
             )
 
-        print(messages)
         completion = client.beta.chat.completions.parse(
             model="gpt-4o-2024-08-06",
             messages=messages,  # type:ignore
             response_format=CombinedTests,
         )
 
-        print(completion)
         ai_repsonse = completion.choices[0].message
         if not ai_repsonse.parsed:
             return None
