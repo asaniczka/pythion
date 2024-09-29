@@ -350,7 +350,7 @@ class NodeIndexer:
         call_finder.visit(node)
         if recursive:
             for call in deepcopy(call_names):
-                dep_node = self.index.get(call, set())
+                dep_node = self.index.get(call)
                 if not dep_node:
                     continue
                 for sub_node in dep_node:
@@ -445,7 +445,7 @@ class NodeIndexer:
                 node = obj
                 break
         else:
-            return None
+            raise ValueError("Invalid Object ID")
 
         arg_types: set[str] = set()
         node_src: ast.Module | ast.stmt | ast.FunctionDef | ast.ClassDef = ast.parse(
@@ -512,6 +512,27 @@ class NodeIndexer:
         )
         for dup in duplicate_names:
             print(dup.location)
+
+    @staticmethod
+    def get_source_code_from_name(
+        index: dict[str, set[str]], obj_name: str
+    ) -> SourceCode | None:
+
+        func = list(index[obj_name])
+        if not func:
+            return None
+
+        if len(func) > 1:
+            print("Found multiple elements. Please select the proper one:")
+            for idx, item in enumerate(func):
+                print(f"{idx:<4}:{item.location}...")
+            index = int(input("Type index: "))
+
+            object_def = func[index]
+        else:
+            object_def = func[0]
+
+        return object_def
 
 
 if __name__ == "__main__":

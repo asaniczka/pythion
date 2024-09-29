@@ -18,10 +18,14 @@ from pathlib import Path
 
 import pyperclip  # type: ignore
 from openai import OpenAI
-from pydantic import BaseModel
 from rich import print
 from tqdm import tqdm  # type: ignore
-from wrapworks import cwdtoenv  # type: ignore
+from wrapworks import cwdtoenv
+
+from pythion.src.models.doc_writer_models import (  # type: ignore
+    ModuleDocString,
+    ObjDocString,
+)
 
 cwdtoenv()
 from pythion.src.indexer import NodeIndexer
@@ -215,20 +219,17 @@ class DocManager:
         Usage:
             Run the script in the command line and when prompted, enter the name of the function or class. The generated docstring will be copied to the clipboard for easy pasting.
         """
-        if custom_instruction and profile:
-            print("You cannot provide a custom instruction when providing a profile")
-            return
 
         if profile:
             if profile not in DOC_PROFILES:
                 print("ERROR: Commit profile not found")
-                return
-            custom_instruction = DOC_PROFILES[profile]
+                sys.exit(1)
+            profile = DOC_PROFILES[profile]
 
         while True:
             func_name = input("Enter a function or class name: ")
             res = self._handle_doc_generation(
-                func_name, custom_instruction=custom_instruction
+                func_name, custom_instruction=custom_instruction, profile=profile
             )
             if not res:
                 continue
@@ -263,20 +264,22 @@ class DocManager:
             print(f"Copied to clipboard. Manually paste docstring @ {path}")
 
     def _handle_module_doc_generation(
-        self, module_name: str, custom_instruction: str | None = None
+        self,
+        module_name: str,
+        custom_instruction: str | None = None,
     ):
         """
-        Generates documentation strings for a specified Python module based on its source code.
+        Generates and retrieves the documentation for the specified module.
 
             Args:
-                module_name (str): The name of the module for which to generate documentation.
-                custom_instruction (str | None): Additional instructions for customization, if any.
+                module_name (str): The name of the module to document.
+                custom_instruction (str | None): Additional instructions for generating the docstring.
 
             Returns:
-                tuple: A tuple containing the generated docstring and a link to the module's path in VSCode.
+                tuple: A tuple containing the generated docstring and the link to the module in VS Code.
 
             Raises:
-                Exception: If the module source code cannot be processed for documentation generation.
+                SystemExit: If no modules are found or multiple modules are identified without user input.
         """
 
         similar_modules = [mod for mod in self.indexer.file_index if module_name in mod]
@@ -332,22 +335,9 @@ class DocManager:
         object_def: SourceCode | None = None,
         pbar: tqdm | None = None,
         custom_instruction: str | None = None,
+        profile: str | None = None,
     ) -> SourceDoc | None:
-        """
-        Generates a documentation string for a specified function or object.
-
-        Args:
-            function_name (str | None): The name of the function to document. Default is None.
-            object_def (SourceCode | None): An optional SourceCode object containing the definition.
-            pbar (tqdm | None): An optional progress bar for tracking status during generation.
-
-        Returns:
-            SourceDoc | None: A SourceDoc object containing the generated doc string and source code,
-                               or None if generation fails due to errors or missing source code.
-
-        Raises:
-            Exception: Prints error message if documentation generation fails.
-        """
+        """"""
 
         if pbar:
             pbar.update(1)
@@ -355,7 +345,9 @@ class DocManager:
         if not function_name and not object_def:
             raise ValueError("Please provide a function name or an object_def")
 
-        source_code = object_def or self._get_source_code_from_name(function_name)  # type: ignore #fmt:skip
+        source_code = object_def or NodeIndexer.get_source_code_from_name(
+            self.indexer.index, function_name
+        )
         if not source_code:
             print(
                 "ERROR: Unable to locate object in the index. Double check the name you entered."
@@ -372,6 +364,7 @@ class DocManager:
                 dependencies,
                 silence=bool(pbar),
                 custom_instruction=custom_instruction,
+                profile=profile,
             )
         except Exception as e:
             print(e)
@@ -385,36 +378,6 @@ class DocManager:
         doc_string = '"""\n' + doc_string + '\n"""'
         return SourceDoc(doc_string=doc_string, source=source_code)
 
-    def _get_source_code_from_name(self, obj_name: str) -> SourceCode | None:
-        """
-        Retrieves the source code associated with a specified object name from the index.
-
-        Args:
-            obj_name (str): The name of the object to retrieve the source code for.
-
-        Returns:
-            SourceCode | None: The source code of the object if found, or None if no object matches the name.
-
-        Raises:
-            ValueError: If multiple objects are found, prompts the user to specify which object to select.
-        """
-
-        func = list(self.indexer.index[obj_name])
-        if not func:
-            return None
-
-        if len(func) > 1:
-            print("Found multiple elements. Please select the proper one:")
-            for idx, item in enumerate(func):
-                print(f"{idx:<4}:{item.location}...")
-            index = int(input("Type index: "))
-
-            object_def = func[index]
-        else:
-            object_def = func[0]
-
-        return object_def
-
     def _generate_doc(
         self,
         func_name: str,
@@ -422,6 +385,7 @@ class DocManager:
         dependencies: list[str] | None,
         silence: bool = False,
         custom_instruction: str | None = None,
+        profile: str | None = None,
     ):
         """
         Generate a docstring for the specified function.
@@ -442,19 +406,6 @@ class DocManager:
         if not dependencies:
             dependencies = []
 
-        class Step(BaseModel):
-            """#pythion:ignore"""
-
-            why_does_this_object_exist: str | None = None
-            what_purpose_does_it_serve: str | None = None
-
-        class DocString(BaseModel):
-            """#pythion:ignore"""
-
-            steps: list[Step]
-            main_object_name: str
-            main_object_docstring: str
-
         messages = [
             {
                 "role": "system",
@@ -467,6 +418,13 @@ class DocManager:
                 "content": "Dependency Source code: " + "\n\n".join(dependencies),
             },
         ]
+        if profile:
+            messages.append(
+                {
+                    "role": "user",
+                    "content": profile,
+                }
+            )
         if custom_instruction:
             messages.append(
                 {
@@ -478,7 +436,7 @@ class DocManager:
         completion = client.beta.chat.completions.parse(
             model="gpt-4o-mini",
             messages=messages,  # type:ignore
-            response_format=DocString,
+            response_format=ObjDocString,
         )
 
         ai_repsonse = completion.choices[0].message
@@ -492,32 +450,9 @@ class DocManager:
         module_source_code: str,
         custom_instruction: str | None = None,
     ):
-        """
-        Generates docstrings for a specified module.
-
-            Args:
-                module_name (str): The name of the module to document.
-                module_source_code (str): The source code of the module.
-                custom_instruction (str | None, optional): Additional instructions for docstring generation. Defaults to None.
-
-            Returns:
-                str | None: The generated docstring for the module, or None if generation fails.
-        """
+        """"""
         print(f"Generating docstrings for module '{module_name}'")
         client = OpenAI(timeout=30)
-
-        class Step(BaseModel):
-            """#pythion:ignore"""
-
-            why_does_this_module_exist: str | None = None
-            what_purpose_does_it_serve: str | None = None
-
-        class DocString(BaseModel):
-            """#pythion:ignore"""
-
-            steps: list[Step]
-            module_name: str
-            module_docstring: str
 
         messages = [
             {
@@ -527,6 +462,7 @@ class DocManager:
             {"role": "user", "content": "Module Name: " + module_name},
             {"role": "user", "content": "Module source code: " + module_source_code},
         ]
+
         if custom_instruction:
             messages.append(
                 {
@@ -538,7 +474,7 @@ class DocManager:
         completion = client.beta.chat.completions.parse(
             model="gpt-4o-mini",
             messages=messages,  # type:ignore
-            response_format=DocString,
+            response_format=ModuleDocString,
         )
 
         ai_repsonse = completion.choices[0].message
