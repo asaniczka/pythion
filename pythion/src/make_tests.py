@@ -10,7 +10,9 @@ from rich import print
 from wrapworks import cwdtoenv
 
 cwdtoenv()
+
 from pythion.src.indexer import NodeIndexer
+from pythion.src.models.core_models import SourceCode
 from pythion.src.models.test_maker_models import CombinedTests
 
 
@@ -76,8 +78,7 @@ class TestManager:
 
         try:
             tests = self._generate_test(
-                obj_name,
-                source_code.source_code,
+                source_code,
                 dependencies,
                 custom_instruction=custom_instruction,
                 test_type=test_type,
@@ -92,15 +93,14 @@ class TestManager:
 
     def _generate_test(
         self,
-        func_name: str,
-        func_code: str,
+        source_code: SourceCode,
         dependencies: list[str] | None,
         test_type: Literal["unit", "intergration"],
         style: Literal["pytest", "unittest"],
         custom_instruction: str | None = None,
     ) -> CombinedTests | None:
 
-        print(f"Generating tests for '{func_name}'")
+        print(f"Generating tests for '{source_code.object_name}'")
         client = OpenAI(timeout=30)
         if not dependencies:
             dependencies = []
@@ -125,14 +125,14 @@ class TestManager:
 
         messages.extend(
             [
-                {"role": "user", "content": "Main Object Name: " + func_name},
                 {
                     "role": "user",
-                    "content": "Main Object source code: " + func_code,
+                    "content": "Main Object: \n\n" + source_code.model_dump_json(),
                 },
                 {
                     "role": "user",
-                    "content": "Dependency Source code: " + "\n\n".join(dependencies),
+                    "content": "Dependency Source code: \n\n"
+                    + "\n\n".join(dependencies),
                 },
             ]
         )
@@ -145,12 +145,14 @@ class TestManager:
                 }
             )
 
+        print(messages)
         completion = client.beta.chat.completions.parse(
             model="gpt-4o-2024-08-06",
             messages=messages,  # type:ignore
             response_format=CombinedTests,
         )
 
+        print(completion)
         ai_repsonse = completion.choices[0].message
         if not ai_repsonse.parsed:
             return None
