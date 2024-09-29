@@ -51,7 +51,7 @@ class TestManager:
             sys.exit(1)
 
         pyperclip.copy(tests.all_test_cases_combined_to_a_single_file)
-        print("Copied to clipboard!")
+        print("Tests copied to clipboard! Manually paste them in the proper file")
         if debug:
             print(tests)
 
@@ -112,14 +112,14 @@ class TestManager:
                 messages = [
                     {
                         "role": "system",
-                        "content": f"You are a python test writer. Write unittests tests with python {style} package. All test cases whether it be functions or classes needs to contain google style docstrings. Write isolated tests only for the Main Object. Do not write tests for the dependencies. They are for reference only",
+                        "content": f"You are a python test writer. Write unittests tests with python {style} package. All test cases whether it be functions or classes needs to contain google style docstrings. Write isolated tests only for the Main Object. Do not write tests for the dependencies. They are for reference only. Make sure to include type hints for args",
                     }
                 ]
             case "intergration":
                 messages = [
                     {
                         "role": "system",
-                        "content": f"You are a python test writer. Write intergration tests with python {style} package. All test cases whether it be functions or classes needs to contain google style docstrings. Write full intergration tests with each test starting on the Main Object entry point. Mock any required external calls, but do not mock or patch the actual dependency unless it makes a external call to a DB or a HTTP request",
+                        "content": f"You are a python test writer. Write intergration tests with python {style} package. All test cases whether it be functions or classes needs to contain google style docstrings. Write full intergration tests with each test starting on the Main Object entry point. Mock any required external calls, but do not mock or patch the actual dependency unless it makes a external call to a DB or a HTTP request. Make sure to include type hints for args",
                     },
                 ]
             case _:

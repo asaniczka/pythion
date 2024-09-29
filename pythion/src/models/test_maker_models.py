@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -28,6 +30,7 @@ class SingleTestCase(BaseModel):
 class CombinedTests(BaseModel):
     """pythion:ignore"""
 
+    type_of_test_to_build: Literal["unit test", "intergration test"]
     number_of_test_cases_required_for_full_coverage: int
     tests: list[SingleTestCase]
     imports: list[ItemImport] | None
