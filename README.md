@@ -39,7 +39,7 @@ pythion [OPTIONS] COMMAND [ARGS]…
 Generates and manages docstrings for Python projects.
 
 ```
-pythion docs <root_dir> [--custom-instruction <instruction>] [--profile <profile>]</profile></instruction></root_dir>
+pythion docs <root_dir> [--custom-instruction <instruction>] [--profile <profile>]
 ```
 
 - **Arguments:**
@@ -59,7 +59,7 @@ pythion docs /path/to/project --custom-instruction "Use concise language."
 Generates documentation for Python modules.
 
 ```
-pythion module_docs <root_dir> [--custom-instruction <instruction>]</instruction></root_dir>
+pythion module_docs <root_dir> [--custom-instruction <instruction>]
 ```
 
 - **Arguments:**
@@ -78,7 +78,7 @@ pythion module_docs /path/to/project --custom-instruction "Include examples in d
 Creates a documentation cache for functions and methods in a specified directory.
 
 ```
-pythion build-cache <root_dir> [--use_all] [--dry]</root_dir>
+pythion build-cache <root_dir> [--use_all] [--dry]
 ```
 
 - **Arguments:**
@@ -115,7 +115,7 @@ pythion iter-docs /path/to/dir
 Generates a commit message based on staged changes.
 
 ```
-pythion make-commit [--custom-instruction <instruction>] [--profile <profile>]</profile></instruction>
+pythion make-commit [--custom-instruction <instruction>] [--profile <profile>]
 ```
 
 - **Options:**
@@ -133,7 +133,7 @@ pythion make-commit --custom-instruction "Don't mention version updates"
 Bumps version numbers in a specified version file.
 
 ```
-pythion bump-version --version-regex <pattern> --file-path <file></file></pattern>
+pythion bump-version --version-regex <pattern> --file-path <file>
 ```
 
 - **Arguments:**

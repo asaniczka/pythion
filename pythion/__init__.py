@@ -1,26 +1,30 @@
 """
-This module contains commands for managing Python projects with focus on documentation.
+This module contains a CLI tool that simplifies Python project development tasks.
 
-Features:
-- Generate docstrings for Python projects.
-- Manage module documentation.
-- Create documentation caches.
-- Iterate through project documents.
-- Handle smart commit messages.
-- Bump version numbers.
+### Features:
+
+- Generate and manage docstrings.
+- Create documentation for Python modules.
+- Build docstring caches based on functions.
+- Iterate through documents.
+- Create commit messages via AI assistance.
+- Bump version numbers in specified files.
+- Generate test cases based on parameters.
+
 """
 
 # pylint: disable=wrong-import-position
 import sys
 
 import click
-from wrapworks import cwdtoenv  # type: ignore
+from wrapworks import cwdtoenv
 
 cwdtoenv()
 
 from pythion.src.commit_writer import handle_commit
 from pythion.src.doc_writer import DocManager
 from pythion.src.increase_version import execute_bump_version
+from pythion.src.make_tests import TestManager
 
 
 @click.group()
@@ -44,7 +48,13 @@ def pythion():
 
 
 @click.command()
-@click.argument("root_dir")
+@click.option(
+    "-r",
+    "--root_dir",
+    help="Root directory to build an index on",
+    required=True,
+    prompt=True,
+)
 @click.option(
     "-ci", "--custom-instruction", help="Any custom instructions to provide to the AI"
 )
@@ -83,7 +93,13 @@ def docs(
 
 
 @click.command()
-@click.argument("root_dir")
+@click.option(
+    "-r",
+    "--root_dir",
+    help="Root directory to build an index on",
+    required=True,
+    prompt=True,
+)
 @click.option(
     "-ci", "--custom-instruction", help="Any custom instructions to provide to the AI"
 )
@@ -106,7 +122,13 @@ def module_docs(root_dir: str, custom_instruction: str | None = None):
 
 
 @click.command()
-@click.argument("root_dir")
+@click.option(
+    "-r",
+    "--root_dir",
+    help="Root directory to build an index on",
+    required=True,
+    prompt=True,
+)
 @click.option(
     "-ua",
     "--use_all",
@@ -137,7 +159,13 @@ def build_cache(root_dir: str, use_all: bool, dry: bool):
 
 
 @click.command()
-@click.argument("root_dir")
+@click.option(
+    "-r",
+    "--root_dir",
+    help="Root directory to build an index on",
+    required=True,
+    prompt=True,
+)
 def iter_docs(root_dir: str):
     """
     Command-line interface to iterate through documents in a given directory.
@@ -193,12 +221,19 @@ def make_commit(custom_instruction: str | None = None, profile: str | None = Non
 
 
 @click.command()
-@click.option("-r", "--version-regex", help="Regex pattern to match", required=True)
+@click.option(
+    "-r",
+    "--version-regex",
+    help="Regex pattern to match",
+    required=True,
+    prompt=True,
+)
 @click.option(
     "-f",
     "--file-path",
     help="Fullly qualified path that contains the version file",
     required=True,
+    prompt=True,
 )
 def bump_version(version_regex: str, file_path: str):
     """
@@ -225,12 +260,82 @@ def bump_version(version_regex: str, file_path: str):
         sys.exit(1)
 
 
+@click.command()
+@click.option(
+    "-r",
+    "--root_dir",
+    help="Root directory to build an index on",
+    required=True,
+    prompt=True,
+)
+@click.option(
+    "-s",
+    "--style",
+    type=click.Choice(["pytest", "unittest"]),
+    help="Your prefered test style",
+    required=True,
+    prompt=True,
+)
+@click.option(
+    "-t",
+    "--test-type",
+    type=click.Choice(["unit", "intergration"]),
+    help="Type of test to build",
+    required=True,
+    prompt=True,
+)
+@click.option(
+    "-d",
+    "--debug",
+    is_flag=True,
+    help="Enable debug mode",
+)
+@click.option(
+    "-ci", "--custom-instruction", help="Any custom instructions to provide to the AI"
+)
+def test(
+    root_dir: str,
+    style: str,
+    test_type: str,
+    debug: bool = False,
+    custom_instruction: str | None = None,
+):
+    """
+    Generates test cases based on specified parameters.
+
+    This command allows users to generate test cases for Python code.
+
+    Arguments:
+
+    - `-r`, `--root_dir`: Root directory to build an index on (required).
+    - `-s`, `--style`: Preferred test style; either 'pytest' or 'unittest' (required).
+    - `-t`, `--test-type`: Type of test to build; can be 'unit' or 'integration' (required).
+
+    Example:
+
+    - To generate unit tests using pytest in the specified root directory:
+    > pythion test -r /path/to/project -s pytest -t unit
+
+    - To generate integration tests using unittest:
+    > pythion test -r /path/to/project -s unittest -t integration
+    """
+
+    manager = TestManager(root_dir=root_dir)
+    manager.make_tests(
+        style=style,
+        test_type=test_type,
+        debug=debug,
+        custom_instruction=custom_instruction,
+    )
+
+
 pythion.add_command(docs)
 pythion.add_command(module_docs)
 pythion.add_command(build_cache)
 pythion.add_command(iter_docs)
 pythion.add_command(make_commit)
 pythion.add_command(bump_version)
+pythion.add_command(test)
 
 if __name__ == "__main__":
     pythion()

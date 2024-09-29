@@ -28,6 +28,7 @@ class SingleTestCase(BaseModel):
 class CombinedTests(BaseModel):
     """pythion:ignore"""
 
+    number_of_test_cases_required_for_full_coverage: int
     tests: list[SingleTestCase]
     imports: list[ItemImport] | None
     mocks: list[Mocks] | None

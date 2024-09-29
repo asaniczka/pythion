@@ -39,6 +39,7 @@ class TestManager:
         style: Literal["pytest", "unittest"] = "pytest",
         test_type: Literal["unit", "integration"] = "unit",
         custom_instruction: str | None = None,
+        debug: bool = False,
     ):
         """"""
         func_name = input("Enter a function or class name: ")
@@ -51,7 +52,8 @@ class TestManager:
 
         pyperclip.copy(tests.all_test_cases_combined_to_a_single_file)
         print("Copied to clipboard!")
-        print(tests)
+        if debug:
+            print(tests)
 
     def _handle_test_generation(
         self,
