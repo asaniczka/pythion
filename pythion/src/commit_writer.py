@@ -42,7 +42,7 @@ def generate_message(
         Raises:
             Any relevant exceptions from the OpenAI client or message parsing.
     """
-    client = OpenAI(timeout=30)
+    client = OpenAI(timeout=180)
 
     class Step(BaseModel):
         """#pythion:ignore"""

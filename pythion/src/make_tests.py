@@ -103,7 +103,7 @@ class TestManager:
     ) -> CombinedTests | None:
 
         print(f"Generating tests for '{source_code.object_name}'")
-        client = OpenAI(timeout=30)
+        client = OpenAI(timeout=180)
         if not dependencies:
             dependencies = []
 

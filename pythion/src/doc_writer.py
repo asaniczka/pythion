@@ -402,7 +402,7 @@ class DocManager:
         """
         if not silence:
             print(f"Generating docstrings for '{func_name}'")
-        client = OpenAI(timeout=30)
+        client = OpenAI(timeout=180)
         if not dependencies:
             dependencies = []
 
@@ -452,7 +452,7 @@ class DocManager:
     ):
         """"""
         print(f"Generating docstrings for module '{module_name}'")
-        client = OpenAI(timeout=30)
+        client = OpenAI(timeout=180)
 
         messages = [
             {
