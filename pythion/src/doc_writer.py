@@ -143,16 +143,12 @@ class DocManager:
             "Docstring cache built successfully. Use iter-docs to go through the docstrings"
         )
 
-    def iter_docs(self):
-        """
-        Iterates through cached documentation strings, allowing the user to manage and save them.
+    def iter_docs(self, build: bool = False):
+        """"""
 
-        This function reads documentation strings from a cache file. If the cache file does not exist, it prompts the user to create one. For each cached documentation, it copies the string to the clipboard and prompts the user to decide
-        what to do with it: paste and save, skip, or exit. If the user chooses to exit, any uncached items remain for later saving. The updated list of documentation strings is saved back to the cache file at the end of the operation.
+        if build:
+            self.build_doc_cache()
 
-        Raises:
-            IOError: If there is an error reading from or writing to the cache file.
-        """
         path = Path(self.cache_dir, self.doc_cache_file_name)
         if not path.exists():
             print(
@@ -457,7 +453,7 @@ class DocManager:
         messages = [
             {
                 "role": "system",
-                "content": "You are a Python module docstring writer. Your task is to look at the module source code and write a doc string to put at the top of the file.\n\nThe format I want is Google Style. Format neatly with list items (if any). Keep documentation simple and minimal. Keep sentences short and use bullet points. Max sentence length: 100 characters",
+                "content": "You are a Python module docstring writer. Your task is to look at the module source code and write a doc string to put at the top of the file.\n\nThe format I want is Google Style. Format neatly with list items (if any). Keep documentation simple and minimal and do not do indent headings. Keep sentences short and use bullet points. Max sentence length: 100 characters",
             },
             {"role": "user", "content": "Module Name: " + module_name},
             {"role": "user", "content": "Module source code: " + module_source_code},

@@ -53,7 +53,7 @@ def pythion():
     "--root_dir",
     help="Root directory to build an index on",
     required=True,
-    prompt=True,
+    default=".",
 )
 @click.option(
     "-ci", "--custom-instruction", help="Any custom instructions to provide to the AI"
@@ -98,7 +98,7 @@ def docs(
     "--root_dir",
     help="Root directory to build an index on",
     required=True,
-    prompt=True,
+    default=".",
 )
 @click.option(
     "-ci", "--custom-instruction", help="Any custom instructions to provide to the AI"
@@ -164,24 +164,19 @@ def build_cache(root_dir: str, use_all: bool, dry: bool):
     "--root_dir",
     help="Root directory to build an index on",
     required=True,
-    prompt=True,
+    default=".",
 )
-def iter_docs(root_dir: str):
-    """
-    Command-line interface to iterate through documents in a given directory.
-
-    Args:
-        root_dir (str): The path to the directory containing documents to be iterated.
-
-    This function initializes a document manager with the specified root directory and calls
-    the iter_docs method to handle the processing of each document.
-
-    Example:
-        pythion src
-    """
+@click.option(
+    "-b",
+    "--build-docs",
+    help="Should the command build docs before iterating. Same as using 'pythion build-cache' and 'pythion iter-docs'. Saves you a command.",
+    is_flag=True,
+)
+def bulk_docs(root_dir: str, build_docs: bool):
+    """"""
 
     manager = DocManager(root_dir=root_dir)
-    manager.iter_docs()
+    manager.iter_docs(build=build_docs)
 
 
 @click.command()
@@ -266,7 +261,7 @@ def bump_version(version_regex: str, file_path: str):
     "--root_dir",
     help="Root directory to build an index on",
     required=True,
-    prompt=True,
+    default=".",
 )
 @click.option(
     "-s",
@@ -332,7 +327,7 @@ def test(
 pythion.add_command(docs)
 pythion.add_command(module_docs)
 pythion.add_command(build_cache)
-pythion.add_command(iter_docs)
+pythion.add_command(bulk_docs)
 pythion.add_command(make_commit)
 pythion.add_command(bump_version)
 pythion.add_command(test)
