@@ -256,9 +256,7 @@ class DocManager:
             pyperclip.copy(doc_string)
             print(f"Copied to clipboard. Manually paste docstring @ {path}")
 
-    def iter_modules(
-        self,
-    ):
+    def iter_modules(self, full_build: bool = False):
         """
         Iterate through cached module documentation and copy it to the clipboard.
 
@@ -273,7 +271,7 @@ class DocManager:
           3. Allows copying of each module's docstring to the clipboard.
         """
 
-        self._build_module_doc_cache()
+        self._build_module_doc_cache(full_build=full_build)
 
         path = Path(self.cache_dir, self.module_cache_file_name)
         if not path.exists():

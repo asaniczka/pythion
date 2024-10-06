@@ -129,10 +129,22 @@ def module_docs(root_dir: str, custom_instruction: str | None = None):
     required=True,
     default=".",
 )
-def bulk_modules(root_dir: str):
+@click.option(
+    "-b",
+    "--full-build",
+    help="Rebuild doc strings for all modules including ones that already contain doc strings",
+    is_flag=True,
+)
+def bulk_modules(root_dir: str, full_build: bool = False):
+    """
+    Command-line interface to build or rebuild doc strings for all modules in the specified root directory.
 
+    Args:
+        root_dir (str): Root directory to build an index on. This argument is required.
+        full_build (bool, optional): Rebuild doc strings for all modules, including those that already have doc strings. Defaults to False.
+    """
     manager = DocManager(root_dir=root_dir)
-    manager.iter_modules()
+    manager.iter_modules(full_build=full_build)
 
 
 @click.command()
