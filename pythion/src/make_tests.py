@@ -17,7 +17,18 @@ from pythion.src.models.test_maker_models import CombinedTests
 
 
 class TestManager:
-    """"""
+    """
+    Class to manage test generation for Python functions and classes.
+
+    Attributes:
+        root_dir (str): The root directory to search for source files.
+        folders_to_ignore (list[str]): A list of folder names to be ignored during indexing.
+        indexer (NodeIndexer): An instance of NodeIndexer to handle source code indexing.
+
+    Methods:
+        make_tests(style='pytest', test_type='unit', custom_instruction=None, debug=False):
+            Generates tests based on specified parameters and copies them to clipboard.
+    """
 
     def __init__(
         self,
@@ -41,7 +52,18 @@ class TestManager:
         custom_instruction: str | None = None,
         debug: bool = False,
     ):
-        """"""
+        """
+        Generates test cases for a specified function or class.
+
+        Args:
+            style (Literal['pytest', 'unittest']): Choice of testing framework. Defaults to 'pytest'.
+            test_type (Literal['unit', 'integration']): Specifies the type of tests to generate. Defaults to 'unit'.
+            custom_instruction (str | None): Custom instructions for generating tests. Defaults to None.
+            debug (bool): Flag to enable debug output. Defaults to False.
+
+        Raises:
+            SystemExit: If no tests are generated or if an error occurs during test generation.
+        """
         func_name = input("Enter a function or class name: ")
         tests = self._handle_test_generation(
             func_name, test_type, style, custom_instruction=custom_instruction
@@ -62,7 +84,18 @@ class TestManager:
         style: Literal["pytest", "unittest"],
         custom_instruction: str | None = None,
     ) -> CombinedTests | None:
-        """"""
+        """
+        Handles the generation of tests for a specified function.
+
+        Args:
+            function_name (str): The name of the function for which tests are to be generated.
+            test_type (Literal['unit', 'intergration']): The type of tests to generate (unit or integration).
+            style (Literal['pytest', 'unittest']): The testing framework style to use.
+            custom_instruction (str | None, optional): Additional custom instructions for test generation.
+
+        Returns:
+            CombinedTests | None: The generated tests if successful; otherwise, returns None.
+        """
 
         source_code = NodeIndexer.get_source_code_from_name(
             self.indexer.index, function_name
@@ -101,7 +134,19 @@ class TestManager:
         style: Literal["pytest", "unittest"],
         custom_instruction: str | None = None,
     ) -> CombinedTests | None:
+        """
+        Generates test cases for provided source code based on the specified test type and style.
 
+        Args:
+            source_code (SourceCode): The source code object containing details of the code to be tested.
+            dependencies (list[str] | None): A list of dependencies for reference, can be None.
+            test_type (Literal['unit', 'integration']): The type of tests to generate ('unit' or 'integration').
+            style (Literal['pytest', 'unittest']): The test style to use for generating tests.
+            custom_instruction (str | None): Additional instructions for generating tests, can be None.
+
+        Returns:
+            CombinedTests | None: The generated tests as a CombinedTests object, or None if generation fails.
+        """
         print(f"Generating tests for '{source_code.object_name}'")
         client = OpenAI(timeout=180)
         if not dependencies:

@@ -173,7 +173,13 @@ def build_cache(root_dir: str, use_all: bool, dry: bool):
     is_flag=True,
 )
 def bulk_docs(root_dir: str, build_docs: bool):
-    """"""
+    """
+    Command to manage docstring generation for the specified root directory.
+
+    Args:
+        root_dir (str): Root directory to build an index on.
+        build_docs (bool): Indicates whether to build documentation before iterating over documents.
+    """
 
     manager = DocManager(root_dir=root_dir)
     manager.iter_docs(build=build_docs)

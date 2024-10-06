@@ -406,7 +406,18 @@ class NodeIndexer:
         return call_names
 
     def _get_args(self, node: ast.FunctionDef) -> set[str] | None:
-        """"""
+        """
+        Extracts argument types from a function definition node.
+
+        Args:
+            node (ast.FunctionDef): The function definition node from which to extract argument types.
+
+        Returns:
+            set[str] | None: A set of argument type names if the node is a valid function definition, otherwise None.
+
+        Raises:
+            TypeError: If the input node is not an instance of ast.FunctionDef.
+        """
         if not isinstance(node, ast.FunctionDef):
             return None
         arg_types: set[str] = set()
@@ -552,7 +563,16 @@ class NodeIndexer:
     def get_source_code_from_name(
         index: dict[str, set[str]], obj_name: str
     ) -> SourceCode | None:
+        """
+        Retrieves the source code of an object based on its name.
 
+        Args:
+            index (dict[str, set[str]]): A dictionary mapping object names to their definitions.
+            obj_name (str): The name of the object for which to retrieve the source code.
+
+        Returns:
+            SourceCode | None: The source code of the specified object or None if the object is not found.
+        """
         func = list(index[obj_name])
         if not func:
             return None

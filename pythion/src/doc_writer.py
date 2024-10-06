@@ -146,7 +146,19 @@ class DocManager:
         )
 
     def iter_docs(self, build: bool = False):
-        """"""
+        """
+        Iterates through cached docstrings and manages clipboard operations.
+
+        Args:
+            build (bool): Indicates whether to rebuild the docstring cache.
+
+        Raises:
+            FileNotFoundError: If the docstring cache file does not exist.
+
+        Notes:
+            - Copies each docstring to the clipboard and prompts for further action.
+            - Saves results not copied if the process is exited.
+        """
 
         if build:
             self.build_doc_cache()
@@ -246,7 +258,19 @@ class DocManager:
     def iter_modules(
         self,
     ):
-        """"""
+        """
+        Iterate through cached module documentation and copy it to the clipboard.
+
+        This method loads the module docstring cache from a specified file, validates the cache contents, and allows the user to copy each module's docstring to their clipboard for manual usage.
+
+        Raises:
+          SystemExit: If the docstring cache file does not exist or is empty.
+
+        Usage:
+          1. Builds the module documentation cache using _build_module_doc_cache.
+          2. Reads from the cache file stored in the designated cache directory.
+          3. Allows copying of each module's docstring to the clipboard.
+        """
 
         self._build_module_doc_cache()
 
@@ -289,7 +313,18 @@ class DocManager:
             return
 
     def _build_module_doc_cache(self, full_build: bool = False):
-        """"""
+        """
+        Generate and cache documentation for modules.
+
+        Args:
+            full_build (bool): A flag indicating whether to perform a full build.
+
+        Returns:
+            None
+
+        Raises:
+            Exception: If an error occurs during documentation generation.
+        """
 
         files_to_process: set[str] = set()
 
@@ -338,7 +373,17 @@ class DocManager:
         module_path: str | None = None,
         custom_instruction: str | None = None,
     ):
-        """"""
+        """
+        Generates module documentation based on the supplied module name or path.
+
+        Args:
+            module_name (str | None): The name of the module to document. If None, the function tries to find the module based on the module_path.
+            module_path (str | None): The path to the module's source code. If None, it will attempt to locate the module using the module_name.
+            custom_instruction (str | None): Additional instructions for generating the documentation, if needed.
+
+        Returns:
+            tuple | None: A tuple containing the generated docstring and a VSCode link to the module file, or None if unable to generate documentation.
+        """
 
         if not module_path:
             similar_modules = [
@@ -398,7 +443,19 @@ class DocManager:
         custom_instruction: str | None = None,
         profile: str | None = None,
     ) -> SourceDoc | None:
-        """"""
+        """
+        _handle_doc_generation function generates documentation strings for specified functions or objects.
+
+        Args:
+            function_name (str, optional): The name of the function for which documentation is to be generated.
+            object_def (SourceCode, optional): An optional SourceCode object containing the source details of the function.
+            pbar (tqdm, optional): A progress bar for tracking the operation, if applicable.
+            custom_instruction (str, optional): Any custom instructions for generating the documentation.
+            profile (str, optional): Profile information that may guide the documentation generation.
+
+        Returns:
+            SourceDoc | None: A SourceDoc object containing the generated documentation string and its source, or None if generation fails.
+        """
 
         if pbar:
             pbar.update(1)
@@ -511,7 +568,17 @@ class DocManager:
         module_source_code: str,
         custom_instruction: str | None = None,
     ):
-        """"""
+        """
+        Generates a docstring for a specified Python module.
+
+        Args:
+            module_name (str): The name of the module.
+            module_source_code (str): The source code of the module.
+            custom_instruction (str | None): Additional instructions for docstring generation.
+
+        Returns:
+            str | None: The generated docstring or None if generation fails.
+        """
         print(f"Generating docstrings for module '{module_name}'")
         client = OpenAI(timeout=180)
 

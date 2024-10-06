@@ -112,6 +112,13 @@ class SourceDoc(BaseModel):
 
 
 class ModuleDocSave(BaseModel):
+    """
+    Class for saving documentation to a specified path.
+
+    Attributes:
+        doc (str): The documentation content to be saved.
+        path (str): The file path where the documentation will be saved.
+    """
 
     doc: str
     path: str
