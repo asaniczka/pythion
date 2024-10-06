@@ -1,3 +1,7 @@
+"""
+Defines Pydantic models for module and object documentation strings.
+"""
+
 # MODULE DOC CONFIG
 from pydantic import BaseModel
 

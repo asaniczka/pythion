@@ -1,4 +1,15 @@
-""""""
+"""
+Module for generating tests for Python functions and classes.
+
+Overview:
+- Provides a TestManager class to manage test generation.
+- Supports unit and integration tests.
+- Allows for customization via user-defined instructions.
+
+Features:
+- Copies generated tests to clipboard for easy pasting.
+- Handles dependencies automatically.
+"""
 
 # pylint: disable=wrong-import-position
 import sys

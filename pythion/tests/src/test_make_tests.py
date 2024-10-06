@@ -1,3 +1,11 @@
+"""
+Tests for the TestManager class in the make_tests module.
+
+- Uses pytest for testing framework.
+- Covers initialization and method functionality.
+- Includes handling of errors for non-existent source code.
+"""
+
 import pytest
 from wrapworks import cwdtoenv
 

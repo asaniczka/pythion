@@ -124,6 +124,20 @@ def module_docs(root_dir: str, custom_instruction: str | None = None):
 @click.command()
 @click.option(
     "-r",
+    "--root-dir",
+    help="Root directory to build an index on",
+    required=True,
+    default=".",
+)
+def bulk_modules(root_dir: str):
+
+    manager = DocManager(root_dir=root_dir)
+    manager.iter_modules()
+
+
+@click.command()
+@click.option(
+    "-r",
     "--root_dir",
     help="Root directory to build an index on",
     required=True,
@@ -337,6 +351,7 @@ pythion.add_command(bulk_docs)
 pythion.add_command(make_commit)
 pythion.add_command(bump_version)
 pythion.add_command(test)
+pythion.add_command(bulk_modules)
 
 if __name__ == "__main__":
     pythion()

@@ -16,6 +16,7 @@ import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+import traceback
 
 import pyperclip  # type: ignore
 from openai import OpenAI
@@ -285,9 +286,8 @@ class DocManager:
         results = [ModuleDocSave.model_validate(x) for x in content]
 
         if not results:
-            print(
-                "No Docstring cache found. Please use build-doc-cache to build a cache file"
-            )
+            print("No new modules found. All Good!")
+            sys.exit(0)
 
         for result in results:
             pyperclip.copy(result.doc)
@@ -331,30 +331,35 @@ class DocManager:
         for file in self.indexer.file_index:
             content = Path(file).read_text(encoding="utf-8")
             if len(content) < 10:
-                content
+                continue
             content_ast = ast.parse(content)
+
+            if not content_ast.body:
+                continue
             has_doc = (
                 isinstance(content_ast.body[0], ast.Expr)
                 and isinstance(content_ast.body[0].value, ast.Constant)
-                and len(content_ast.body[0].value) > 3
+                and len(content_ast.body[0].value.value) > 3
             )
 
             if has_doc and not full_build:
                 continue
+            files_to_process.add(file)
 
         save_candidates: list[ModuleDocSave] = []
         with ThreadPoolExecutor(max_workers=20) as tpe:
             futures = [
-                tpe.submit(self._handle_doc_generation(mod_path))
+                tpe.submit(self._handle_module_doc_generation, module_path=mod_path)
                 for mod_path in files_to_process
             ]
 
             for future in as_completed(futures):
                 try:
-                    doc, vs_path = future.result()
-                    save_candidates.append(ModuleDocSave(doc=doc, path=vs_path))
+                    res = future.result()
+                    save_candidates.append(ModuleDocSave(doc=res[0], path=res[1]))
                 except Exception as e:
                     print(type(e), e)
+                    traceback.print_exc()
 
         if not save_candidates:
             print("No docs to save")
@@ -372,7 +377,7 @@ class DocManager:
         module_name: str | None = None,
         module_path: str | None = None,
         custom_instruction: str | None = None,
-    ):
+    ) -> tuple[str, str]:
         """
         Generates module documentation based on the supplied module name or path.
 
@@ -384,7 +389,6 @@ class DocManager:
         Returns:
             tuple | None: A tuple containing the generated docstring and a VSCode link to the module file, or None if unable to generate documentation.
         """
-
         if not module_path:
             similar_modules = [
                 mod for mod in self.indexer.file_index if module_name in mod

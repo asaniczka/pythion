@@ -1,3 +1,12 @@
+"""
+This module defines Pydantic models for handling test case data.
+
+- ItemImport: Models item imports.
+- Mocks: Represents objects to be mocked in tests.
+- SingleTestCase: Defines individual test case properties.
+- CombinedTests: Encompasses details for multiple tests.
+"""
+
 from typing import Literal
 
 from pydantic import BaseModel
