@@ -67,6 +67,22 @@ class CallFinder(ast.NodeVisitor):
         """
         self.generic_visit(node)
 
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef):
+        """
+        Visits a class definition node in an Abstract Syntax Tree (AST).
+
+        This method is part of a visitor pattern for traversing AST nodes. It calls the
+        `generic_visit` method to handle the visit according to the AST structure.
+
+        Args:
+            node (ast.ClassDef): The class definition node to be visited.
+
+        Returns:
+            None: This method does not return a value but may modify the state of the
+        dynamic visitor depending on its implementation.
+        """
+        self.generic_visit(node)
+
     def visit_ClassDef(self, node: ast.ClassDef):
         """
         Visits a FunctionDef node in an Abstract Syntax Tree (AST).
@@ -207,6 +223,29 @@ class NodeTransformer(ast.NodeTransformer):
         )
         return node
 
+    def visit_AsyncFunctionDef(self, node: ast.FunctionDef) -> ast.FunctionDef:
+        """
+        Processes and cleans a FunctionDef AST node and indexes its details.
+
+        Args:
+            node (ast.FunctionDef): The AST node representing a function definition.
+
+        Returns:
+            ast.FunctionDef: The cleaned and processed function definition node.
+        """
+        clean_node, has_docstring = self.clean_function(deepcopy(node))
+        self.generic_visit(node)
+        self.index[clean_node.name].add(
+            SourceCode(
+                object_name=clean_node.name,
+                object_type="function",
+                file_path=self.current_path,
+                source_code=ast.unparse(clean_node),
+                has_docstring=has_docstring,
+            )
+        )
+        return node
+
     def visit_ClassDef(self, node: ast.ClassDef) -> ast.ClassDef:
         """
         Processes a class definition node in an Abstract Syntax Tree (AST).
@@ -255,7 +294,7 @@ class NodeIndexer:
         """"""
         self.root_dir = root_dir
         self.index: dict[str, set[SourceCode]] = defaultdict(set)
-        self.file_index: set = set()
+        self.file_index: set[str] = set()
         self.folders_to_ignore = [".venv", ".mypy_cache"]
         if folders_to_ignore:
             self.folders_to_ignore.extend(folders_to_ignore)

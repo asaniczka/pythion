@@ -12,6 +12,7 @@ Key Features:
 # pylint: disable=wrong-import-position
 import ast
 import json
+import os
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -29,7 +30,7 @@ from pythion.src.models.doc_writer_models import (  # type: ignore
 
 cwdtoenv()
 from pythion.src.indexer import NodeIndexer
-from pythion.src.models.core_models import SourceCode, SourceDoc
+from pythion.src.models.core_models import ModuleDocSave, SourceCode, SourceDoc
 from pythion.src.models.prompt_models import DOC_PROFILES
 
 
@@ -54,6 +55,7 @@ class DocManager:
         self.root_dir: str = root_dir
         self.cache_dir: str = ".pythion"
         self.doc_cache_file_name: str = "doc_cache.json"
+        self.module_cache_file_name: str = "module_cache.json"
 
         self.folders_to_ignore = [".venv", ".mypy_cache"]
         self.indexer = indexer or NodeIndexer(
@@ -185,24 +187,6 @@ class DocManager:
 
         self._save_doc_cache(save_results)
 
-    def _save_doc_cache(self, save_results: list[SourceDoc]):
-        """
-        Saves a list of SourceDoc instances to a JSON file in the specified cache directory.
-
-            Args:
-                save_results (list[SourceDoc]): A list of SourceDoc instances to be saved.
-
-            Raises:
-                Exception: Raises an exception if writing to the file fails.
-
-            This method constructs the full path to the cache file, opens it in write mode, and serializes the provided SourceDoc instances using their model_dump() method.
-            The data is stored in a JSON format for later retrieval.
-        """
-        path = Path(self.cache_dir, self.doc_cache_file_name)
-        with open(path, "w", encoding="utf-8") as wf:
-            json.dump([x.model_dump() for x in save_results], wf)
-            return
-
     def make_docstrings(
         self, custom_instruction: str | None = None, profile: str | None = None
     ):
@@ -259,40 +243,121 @@ class DocManager:
             pyperclip.copy(doc_string)
             print(f"Copied to clipboard. Manually paste docstring @ {path}")
 
-    def _handle_module_doc_generation(
+    def iter_modules(
         self,
-        module_name: str,
-        custom_instruction: str | None = None,
     ):
+        """"""
+
+        self._build_module_doc_cache()
+
+        path = Path(self.cache_dir, self.module_cache_file_name)
+        if not path.exists():
+            print("No Docstring cache found")
+            sys.exit(1)
+
+        with open(path, "r", encoding="utf-8") as rf:
+            content = json.load(rf)
+
+        results = [ModuleDocSave.model_validate(x) for x in content]
+
+        if not results:
+            print(
+                "No Docstring cache found. Please use build-doc-cache to build a cache file"
+            )
+
+        for result in results:
+            pyperclip.copy(result.doc)
+            print(f"Copied to clipboard. Manually paste docstring @ {result.path}")
+            do_pop = input("Press enter to continue...")
+
+    def _save_doc_cache(self, save_results: list[SourceDoc]):
         """
-        Generates and retrieves the documentation for the specified module.
+        Saves a list of SourceDoc instances to a JSON file in the specified cache directory.
 
             Args:
-                module_name (str): The name of the module to document.
-                custom_instruction (str | None): Additional instructions for generating the docstring.
-
-            Returns:
-                tuple: A tuple containing the generated docstring and the link to the module in VS Code.
+                save_results (list[SourceDoc]): A list of SourceDoc instances to be saved.
 
             Raises:
-                SystemExit: If no modules are found or multiple modules are identified without user input.
+                Exception: Raises an exception if writing to the file fails.
+
+            This method constructs the full path to the cache file, opens it in write mode, and serializes the provided SourceDoc instances using their model_dump() method.
+            The data is stored in a JSON format for later retrieval.
         """
+        path = Path(self.cache_dir, self.doc_cache_file_name)
+        with open(path, "w", encoding="utf-8") as wf:
+            json.dump([x.model_dump() for x in save_results], wf)
+            return
 
-        similar_modules = [mod for mod in self.indexer.file_index if module_name in mod]
+    def _build_module_doc_cache(self, full_build: bool = False):
+        """"""
 
-        if not similar_modules:
-            print("Unable to locate module. Write using the full file path")
-            return sys.exit(1)
+        files_to_process: set[str] = set()
 
-        if len(similar_modules) > 1:
-            print("Found multiple elements. Please select the proper one:")
-            for idx, item in enumerate(similar_modules):
-                print(f"{idx:<4}:{item}...")
-            index = int(input("Type index: "))
+        for file in self.indexer.file_index:
+            content = Path(file).read_text(encoding="utf-8")
+            if len(content) < 10:
+                content
+            content_ast = ast.parse(content)
+            has_doc = (
+                isinstance(content_ast.body[0], ast.Expr)
+                and isinstance(content_ast.body[0].value, ast.Constant)
+                and len(content_ast.body[0].value) > 3
+            )
 
-            module_path = similar_modules[index]
-        else:
-            module_path = similar_modules[0]
+            if has_doc and not full_build:
+                continue
+
+        save_candidates: list[ModuleDocSave] = []
+        with ThreadPoolExecutor(max_workers=20) as tpe:
+            futures = [
+                tpe.submit(self._handle_doc_generation(mod_path))
+                for mod_path in files_to_process
+            ]
+
+            for future in as_completed(futures):
+                try:
+                    doc, vs_path = future.result()
+                    save_candidates.append(ModuleDocSave(doc=doc, path=vs_path))
+                except Exception as e:
+                    print(type(e), e)
+
+        if not save_candidates:
+            print("No docs to save")
+            return
+
+        with open(
+            os.path.join(self.cache_dir, self.module_cache_file_name),
+            "w",
+            encoding="utf-8",
+        ) as wf:
+            json.dump([x.model_dump() for x in save_candidates], wf)
+
+    def _handle_module_doc_generation(
+        self,
+        module_name: str | None = None,
+        module_path: str | None = None,
+        custom_instruction: str | None = None,
+    ):
+        """"""
+
+        if not module_path:
+            similar_modules = [
+                mod for mod in self.indexer.file_index if module_name in mod
+            ]
+
+            if not similar_modules:
+                print("Unable to locate module. Write using the full file path")
+                return sys.exit(1)
+
+            if len(similar_modules) > 1:
+                print("Found multiple elements. Please select the proper one:")
+                for idx, item in enumerate(similar_modules):
+                    print(f"{idx:<4}:{item}...")
+                index = int(input("Type index: "))
+
+                module_path = similar_modules[index]
+            else:
+                module_path = similar_modules[0]
 
         path = Path(module_path)
         source_code = ast.parse(path.read_text(encoding="utf-8"))

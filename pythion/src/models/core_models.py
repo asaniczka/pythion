@@ -109,3 +109,9 @@ class SourceDoc(BaseModel):
 
     source: SourceCode
     doc_string: str | None
+
+
+class ModuleDocSave(BaseModel):
+
+    doc: str
+    path: str
