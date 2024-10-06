@@ -406,17 +406,7 @@ class NodeIndexer:
         return call_names
 
     def _get_args(self, node: ast.FunctionDef) -> set[str] | None:
-        """
-        Retrieve argument types from a function definition node.
-
-        Args:
-            node (ast.FunctionDef): The function definition node from which to extract
-                the argument types.
-
-        Returns:
-            set[str] | None: A set of argument type names if the node is a valid
-                function definition, or None if it is not.
-        """
+        """"""
         if not isinstance(node, ast.FunctionDef):
             return None
         arg_types: set[str] = set()
@@ -426,6 +416,12 @@ class NodeIndexer:
             if isinstance(arg.annotation, ast.BinOp):
                 sub_types = self._get_arg_from_binop(arg.annotation)
                 arg_types.update(sub_types)
+            if isinstance(arg.annotation, ast.Subscript):
+                if not isinstance(arg.annotation.slice, ast.Tuple):
+                    continue
+                for elt in arg.annotation.slice.elts:
+                    if isinstance(elt, ast.Name):
+                        arg_types.add(elt.id)
 
         return arg_types
 
