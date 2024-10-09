@@ -14,9 +14,9 @@ import ast
 import json
 import os
 import sys
+import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-import traceback
 
 import pyperclip  # type: ignore
 from openai import OpenAI

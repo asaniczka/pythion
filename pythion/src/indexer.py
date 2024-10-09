@@ -154,7 +154,7 @@ class NodeTransformer(ast.NodeTransformer):
             whether a docstring was present and removed.
         """
         has_docstring = False
-        if not isinstance(node, ast.FunctionDef):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             return node, has_docstring
         if (
             node.body
