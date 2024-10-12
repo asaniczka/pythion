@@ -69,16 +69,35 @@ class DocManager:
 
     def _make_cache_dir(self):
         """
-        Creates a cache directory if it does not exist.
+        Creates a cache directory and updates the .gitignore file if necessary.
 
-        This method checks the path defined in the `cache_dir` attribute and creates the specified directory along with any necessary parent directories. If the directory already exists, no action is taken.
+        This method ensures that the directory specified by `self.cache_dir` exists,
+        creating it if it does not. It also adds the directory to a .gitignore file in
+        the current working directory to prevent it from being tracked by Git.
 
         Attributes:
-            cache_dir (str): The directory path where the cache should be created.
+        - cache_dir: The path of the cache directory to be created.
+
+        Returns:
+        - None: This method does not return a value.
         """
 
         path = Path(self.cache_dir)
         path.mkdir(parents=True, exist_ok=True)
+
+        current_dir = Path.cwd()
+        gitignore_path = current_dir / ".gitignore"
+        pattern_to_add = f"\n{self.cache_dir}"
+
+        if gitignore_path.exists():
+            with open(gitignore_path, "r+", encoding="utf-8") as f:
+                content = f.read()
+                if self.cache_dir in content:
+                    return
+                f.write(pattern_to_add)
+        else:
+            with open(gitignore_path, "w", encoding="utf-8") as f:
+                f.write(pattern_to_add)
 
     def build_doc_cache(self, use_all: bool = False, dry: bool = False):
         """

@@ -197,6 +197,7 @@ def build_cache(root_dir: str, use_all: bool, dry: bool):
     "--build-docs",
     help="Should the command build docs before iterating. Same as using 'pythion build-cache' and 'pythion iter-docs'. Saves you a command.",
     is_flag=True,
+    default=True,
 )
 def bulk_docs(root_dir: str, build_docs: bool):
     """
