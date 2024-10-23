@@ -6,7 +6,7 @@ This module defines profiles for documentation and commits.
 """
 
 DOC_PROFILES = {
-    "fastapi": "Write in Markdown for Swagger documentation. This is NOT internal documentation.",
+    "fastapi": "Write in Markdown for Swagger documentation. This is NOT internal documentation.Start with a H1 of the human readable function name followed by a 1 line description. THen describe the arguments, results, and errors. We're using fastAPI",
     "cli": "Write documentation for a CLI tool in the format of git docs. Include relevant examples",
 }
 COMMIT_PROFILES = {
