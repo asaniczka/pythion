@@ -5,7 +5,7 @@ format:
 
 commit:
 	- git add .
-	- python3 /media/asaniczka/working/packages/pythion/pythion/__init__.py make-commit -p no-version
+	- python3 /media/WorkShared/packages/pythion/pythion/__init__.py make-commit -p no-version
 	- git push
 
 bump:
