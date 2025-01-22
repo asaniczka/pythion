@@ -548,7 +548,7 @@ class DocManager:
         messages = [
             {
                 "role": "system",
-                "content": "You are a Python docstring writer. Your task is to look at the main object, it's arguments, dependencies and write a docstring for the main object. Only share the the docstring for the main object.\n\nThe format I want is Google Style. Format neatly with list items (if any). Keep documentation simple, minimal and don't repeat the obvious. Keep to 20-60 words. Don't indent headings",
+                "content": "You are a Python docstring writer. Your task is to look at the main object, it's arguments, dependencies and write a docstring for the main object. Only share the the docstring for the main object.\n\nThe format I want is Google Style. Format neatly with list items (if any). Keep documentation simple, minimal and don't repeat the obvious. Keep to 20-60 words. Don't indent headings. For classes, don't list attributes and properties. That makes the doc string too noisy",
             },
             {"role": "user", "content": "Main Object Name: " + func_name},
             {"role": "user", "content": "Main Object source code: " + func_code},
