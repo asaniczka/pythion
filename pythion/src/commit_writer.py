@@ -59,7 +59,7 @@ def generate_message(
     messages = [
         {
             "role": "system",
-            "content": "You are a Git commit message writer. Examine the provided diff and write a git commit in Contextual Style. Prefix all commits with one of ['ADD','REMOVE','UPDATE','TEST',IMPROVE','CLEANUP','FEATURE','OPTIMIZE'... or a similer verb].\n\n Commit style would be 'ACTION VERB: Describe commit in 1 line Max 50 characters.'",
+            "content": "You are a Git commit message writer. Examine the provided diff and write a git commit in Contextual Style. Prefix all commits with one of ['ADD','REMOVE','UPDATE','TEST',IMPROVE','CLEANUP','FEATURE','OPTIMIZE'... or a similer verb].\n\n Commit style would be 'ACTION VERB: Describe commit in 1 line Max 50 characters.\n\nThen in bullet points, explain the changes in detail similar to a changelog'",
         },
         {"role": "user", "content": "GIT DIFF: \n\n" + git_diff},
     ]
