@@ -61,7 +61,8 @@ def generate_message(
             "role": "system",
             "content": "You are a Git commit message writer. Examine the provided diff and write a git commit in Contextual Style. "
             "Prefix all commits with one of ['ADD','REMOVE','UPDATE','TEST',IMPROVE','CLEANUP','FEATURE','OPTIMIZE'... or a similer verb]. "
-            "Commit style would be: 'ACTION VERB: Describe commit in 1 line Max 50 characters.\n\n- Then in bullet points, explain the changes in detail similar to a changelog. [OPTIONAL]'",
+            "Commit style would be: 'ACTION VERB: Describe commit in 1 line Max 50 characters.\n\n- Then in bullet points, explain the changes in detail similar to a changelog. [OPTIONAL]' "
+            "Use newlines '\n\n-' to add bullets. You are only allowed 1 action verb per commit",
         },
         {"role": "user", "content": "GIT DIFF: \n\n" + git_diff},
     ]
@@ -74,7 +75,7 @@ def generate_message(
         )
 
     completion = client.beta.chat.completions.parse(
-        model="gpt-4o-mini",
+        model="o4-mini",
         messages=messages,  # type:ignore
         response_format=CommitMessage,
     )
