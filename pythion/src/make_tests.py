@@ -204,7 +204,7 @@ class TestManager:
             )
 
         completion = client.beta.chat.completions.parse(
-            model="gpt-4o-2024-08-06",
+            model="o4-mini",
             messages=messages,  # type:ignore
             response_format=CombinedTests,
         )

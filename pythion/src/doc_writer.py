@@ -573,7 +573,7 @@ class DocManager:
             )
 
         completion = client.beta.chat.completions.parse(
-            model="gpt-4o-mini",
+            model="o4-mini",
             messages=messages,  # type:ignore
             response_format=ObjDocString,
         )
@@ -621,7 +621,7 @@ class DocManager:
             )
 
         completion = client.beta.chat.completions.parse(
-            model="gpt-4o-mini",
+            model="o4-mini",
             messages=messages,  # type:ignore
             response_format=ModuleDocString,
         )
