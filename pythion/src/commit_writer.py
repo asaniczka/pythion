@@ -71,6 +71,7 @@ def generate_message(
             }
         )
 
+    print(messages)
     completion = client.beta.chat.completions.parse(
         model="gpt-4o-mini",
         messages=messages,  # type:ignore
